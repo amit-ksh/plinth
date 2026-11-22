@@ -1,61 +1,32 @@
 # 03 UX and demo
 
-The visual source of truth is the [design system](design/README.md) and its [interactive mockup](design/mockup.html). Where a wireframe below differs, the mockup wins.
+The visual source of truth is the built app and its [design system](design/README.md).
 
 ## Principles
 
-1. Open on a working audit.
+1. Open on one question, with the sample's findings one click away.
 2. Every leak is one click from its arithmetic and one more from a fix.
 3. Assumptions sit beside results, never in a footer.
 4. Simulation is visibly different from imported settings.
 
 ## Navigation
 
-```text
-Sidebar: Audit | Check a promotion | Discounts | Products | Import | Connect agent
-Top bar: Store: Demo      [ Audit | Check ]      Connect agent
-```
+Sidebar: Home, Audit, Products, Discounts, Checklist, Import, Settings, then what needs attention.
+Top bar: store menu (report, backup, import), Check or Audit, Connect an agent.
 
-## S1 Audit (home)
+## Screens
 
-```text
-+-----------------------------------------------------------------------------+
-| 2 leaking products    1 unknown    47 clear in model       [Import store]   |
-| Assumes: one product per cart, qty 1-3, shipping costs $8                   |
-+----------------------------+---------------------------+--------------------+
-| PRODUCTS                   | WHY JACKET LEAKS          | FIX                |
-|                            |                           |                    |
-| X Jacket   -$5.00 / order  |        BUNDLE20           | Stop BUNDLE20      |
-| X Boots    -$2.00 / order  |         /    \            | combining with     |
-| ? Gift box  cost missing   | WELCOME15 -- FREESHIP     | shipping           |
-| + Cap       clear in model |                           |                    |
-| + ...                      | Price              $100   | Closes 1 leak      |
-|                            | BUNDLE20            -20   | Breaks N safe      |
-|                            | WELCOME15           -12   | combinations       |
-|                            | Shipping you pay     -8   |                    |
-|                            | You keep            $60   | [Simulate]         |
-|                            | Cost                $65   | [Add to checklist] |
-|                            | Loss                 $5   | [Show query]       |
-+----------------------------+---------------------------+--------------------+
-```
-
-Below 800px the panes become tabs. Clicking a triangle edge shows the rule allowing that pair.
-
-## S2 Discounts
-
-Table with class, method, amount, scope, dates, allowed classes, tags and leaks involved. A matrix view shows which pairs combine and why.
-
-## S3 Products
-
-Table with price, cost, worst stack, worst net and state. Missing costs are editable inline.
-
-## S4 Import
-
-Choose files, preview, fix errors, choose store settings (Plus, shipping cost, maximum quantity), confirm.
-
-## S5 Connect agent
-
-Store path, configuration snippet and "Is it safe to add a 25% VIP code?"
+| Screen | Question it answers |
+|---|---|
+| Home | Would this promotion sell anything below cost? |
+| Audit | What is losing money, and what can't be checked? |
+| Product | Why does it lose money, and what is the smallest fix? |
+| Products | Where is a particular product? |
+| Discounts | What can combine with what? |
+| Checklist | What do I still have to change in Shopify? |
+| Import | How do I bring in my store? |
+| Settings | What does the math assume? |
+| Connect an agent | How does my agent read this? |
 
 ## States to build
 
@@ -84,5 +55,5 @@ Use Leak, Thin, Unknown and Clear in model. Do not say safe, guaranteed or exact
 | 0:45-1:02 | Boots, trio with a missing edge | "It also finds tag stacks, and rejects groups where one pair can't combine." |
 | 1:02-1:18 | Simulate fix | "One setting closes the leak. Here is what else that change would break." |
 | 1:18-1:28 | Show query | "Cypher in Relate, in the browser. Margin data never leaves the machine." |
-| 1:28-1:42 | Desktop and agent | "An agent checks the same local store before anyone creates the next promotion." |
+| 1:28-1:42 | Claude Code over MCP | "An agent checks the same local store before anyone creates the next promotion." |
 | 1:42-1:50 | URL and repository | "StackLeak. Find the stack before your customers do." |

@@ -21,7 +21,7 @@
 | S06 | Fix simulator | P0 | 2 |
 | S07 | Persistence and backup | P0 | 2 |
 | S08 | Import | P0 | 3 |
-| S09 | Windows desktop app | P0 | 3 |
+| S09 | Windows desktop app | Out of scope | Later |
 | S10 | Read-only MCP | P0 | 3 |
 | S11 | Client HTML report | P1 | 4 |
 | S12 | Draft-promotion check | P1 | 4 |
@@ -32,6 +32,8 @@
 | S17 | Scheduled monitoring and alerts | P2 | Later |
 
 ## P0
+
+Status: S01-S08 and S10-S13 are built and tested. The checkout confirmation in S02 waits for a Shopify development store.
 
 ### S01 Sample and committed store
 - [ ] 50 synthetic variants, 5 collections, 12 discounts.
@@ -84,13 +86,13 @@
 - [ ] Re-import creates no duplicates.
 - [ ] Money converts to minor units without float parsing.
 
-### S09 Windows desktop app
+### S09 Windows desktop app (out of scope, kept for later)
 - [ ] Same audit, proof and simulator as the browser.
 - [ ] Unsigned portable build relaunches with data intact.
 - [ ] Engine restart preserves acknowledged writes.
 
 ### S10 MCP
-- [ ] Exposes four read-only tools.
+- [ ] Exposes five read-only tools.
 - [ ] Sees committed changes while the app is open.
 - [ ] README has a copy-paste setup.
 

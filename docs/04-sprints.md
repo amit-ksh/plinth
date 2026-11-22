@@ -12,6 +12,8 @@ One person, 5 hours a day, Nov 23 to Dec 11: **95 hours, 75 planned and 20 buffe
 | Reserve | Dec 11 | 5 | 0 | 5 | Emergencies only |
 | **Total** | | **95** | **75** | **20** | |
 
+**Status, Nov 23:** Sprints 1-4 are built, apart from L102 (development store), L206 (deploy), L405 (Devpost draft) and the desktop tasks L302-L303, which are out of scope.
+
 ## Sprint 1: Rules and engine
 
 | Task | Work | Feature | Hours | After |
@@ -89,7 +91,7 @@ Use the cheapest model that can do the task safely. Anything that decides whethe
 | Rules, Cypher, scaling, fix ranking | L103-L105, L204, L402 | Opus | High | A wrong answer is a false Clear |
 | Independent test evaluator | L106 | Sonnet | Medium | Bounded spec, kept apart from the engine's author |
 | Visual direction, interface review | L202-L203, sprint gates | Opus | Medium | Judgment, using the better-* skills |
-| Screens from the approved mockup, import, MCP | L201, L205, L301, L304, L401 | Sonnet | Medium | Clear contracts and tests |
+| Screens, import, MCP | L201, L205, L301, L304, L401 | Sonnet | Medium | Clear contracts and tests |
 | Electron packaging and process handling | L302-L303 | Sonnet | High | Known native-module traps |
 | Scaffolding, CI, fixtures, link checks | L101, L206 | Haiku | Low | Mechanical and easy to verify |
 | Final correctness and security review | L501 | Opus | High | Last gate before submission |

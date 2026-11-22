@@ -201,7 +201,7 @@ input[type="file"]::file-selector-button { min-height: 32px; margin-inline-end: 
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 
 /* Home: the centered prompt from the dashboard reference */
-.hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); width: 100%; max-width: var(--width-hero); margin-inline: auto; padding-block: clamp(16px, 11dvh, 112px) var(--space-6); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); width: 100%; max-width: var(--width-hero); margin-inline: auto; padding-block: clamp(8px, calc((100dvh - 752px) / 2), 112px) var(--space-6); }
 .intro { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: var(--space-3); text-align: center; }
 .intro h1 { font-size: var(--text-display); line-height: 1.15; }
 .intro p { max-width: 46ch; font-size: var(--text-body); text-wrap: balance; }

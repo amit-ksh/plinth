@@ -1,51 +1,41 @@
 # Design system
 
-Built with the `better-accessibility`, `better-layout`, `better-writing`, `better-typography`, `better-colors` and `better-ui` skills, and reviewed with `better-interface`.
-
-| File | Purpose |
+| Source | What it decides |
 |---|---|
-| [tokens.css](tokens.css) | The only source of color, type, space, radius and motion values |
-| [mockup.html](mockup.html) | Interactive reference for every screen, with sample data |
-| [inspiration/](inspiration/) | Visual references supplied by the project owner |
+| [inspiration/app-branding-colors.webp](inspiration/app-branding-colors.webp) | Every brand color, sampled pixel by pixel, plus the glow and the dashed guide |
+| [inspiration/dashboard-layout.webp](inspiration/dashboard-layout.webp) | Layout, measured: window, seams, sidebar, top bar, segmented switch, centered prompt, three cards, dots |
+| [tokens.css](../../apps/web/src/tokens.css) | The only place values are defined |
+| [REVIEW.md](REVIEW.md) | The interface review of the built app |
 
-## What comes from each reference
+The two images are third-party references. Their names, logos, copy and artwork are not used in the product.
 
-| Reference | We take | We do not take |
-|---|---|---|
-| `app-branding-colors.webp` | Forest-to-cream atmosphere, dashed guides with crosses, small mono labels | Name, wordmark, knot symbol, icons, slogans, artwork |
-| `dashboard-layout.webp` | Floating window, quiet sidebar, search, centered segmented switch, centered prompt with suggestion cards | Name, flame mark, purple accent, copy, avatar, icons |
+## Principles
 
-The references are third-party work. They are not product assets and must not appear in the app, video or submission.
-
-## Direction
-
-A calm instrument inside a vivid green atmosphere. Expression lives outside the window and in the brand mark. Inside it, money and state are the loudest things.
-
-- **Audit** is the first view and opens on a finished sample audit.
-- **Check** is the centered prompt: describe the next promotion and see what it would leak.
-- The mark is original and provisional: offset layers with one drop escaping. The product name lives in one config value until the rebrand.
+1. **One question per screen.** Home: is this promotion safe to launch? Audit: what is losing money? Product: why, and how do I fix it?
+2. **Answer first.** The title is the answer ("Winter jacket loses $5.00"). Proof, queries and options sit behind named disclosures.
+3. **Money reads as a receipt.** Nobody has to read a chart to understand a loss.
+4. **One column, one filled button.**
 
 ## Rules
 
 | Area | Rule |
 |---|---|
-| Color | Green is brand, selection and primary action. Red is a leak. Orange is unknown. "Clear in model" is neutral with a check, so green is never read as a guarantee |
-| Emphasis | One filled action per view |
-| State | Always icon plus word, never color alone |
-| Type | Instrument Sans for interface, IBM Plex Mono for discount codes and small labels. Tabular numerals for money |
-| Layout | Sidebar until it stops fitting, then a menu. Audit panes adapt with container queries. No page scroll sideways at 320px |
-| Controls | Native elements, 40px targets, visible focus ring, labels on every input |
-| Motion | Only exact properties, 150ms or less for frequent actions, press scale 0.96, nothing moves under reduced motion |
-| Writing | Sentence case, verb-first buttons, errors say how to fix, simulation has undo instead of confirmation |
-| Theme | Light window in v1. A dark theme repoints semantic tokens later |
+| Color | Forest and cream are the brand. Green is selection and never means "safe". Red is only a leak, amber only unknown |
+| State | Icon and words, never color alone |
+| Type | Inter for the interface, Geist Mono for codes. Tabular numerals for money. Self-hosted |
+| Icons | Hugeicons free, through the `Icon` component, stroke matched to text weight |
+| Layout | 40px controls. The sidebar becomes a menu at 900px. No sideways scroll at 320px |
+| Motion | Press scale and background only. No movement under reduced motion |
+| Writing | Sentence case, verb-first buttons, errors say how to fix, undo instead of confirmation |
+| Theme | Light. A dark theme would repoint semantic tokens |
 
 ## Vocabulary
 
 | Use | Never |
 |---|---|
-| Leak | Error, violation |
-| Unknown | Warning, skipped |
-| Clear in model | Safe, guaranteed, passed |
+| Leak, sells below cost | Violation, error |
+| Can't be sure | Skipped, warning |
+| No leak found | Safe, guaranteed |
 | Stack | Bundle, chain |
-| Simulate | Apply (nothing is written to Shopify) |
+| Preview | Apply (nothing is written to Shopify) |
 | Checklist | To-do list |

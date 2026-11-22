@@ -30,16 +30,14 @@ Rules live in one versioned module. Each has a golden test taken from a developm
 
 ```mermaid
 flowchart TB
-  UI[React UI, shared] --> P[EnginePort]
-  P -->|browser| W[Dedicated Worker<br/>Relate WASM]
-  W --> M[(Memory: demo)]
-  W --> O[(OPFS: saved audit)]
-  P -->|desktop| I[Preload and IPC] --> E[Electron utility process<br/>Relate Node]
-  E --> D[(Store directory)]
+  UI[React screens] --> P[call]
+  P --> W[Dedicated worker<br/>Workspace on Relate WASM]
+  W --> M[(Memory: demo, scratch)]
+  W --> O[(OPFS: two slots)]
+  O -.backup, store:import.-> D[(Directory store)]
   A[AI agent] --> S[MCP server, stdio]
   S -->|fresh read-only open per call| D
-  C[packages/core<br/>rules, queries, importers] -.used by.-> W
-  C -.used by.-> E
+  C[packages/core<br/>rules, queries, fixes, import] -.used by.-> W
   C -.used by.-> S
 ```
 
@@ -49,12 +47,10 @@ Repository layout:
 
 ```text
 apps/
-  web/            React, Vite, worker adapter
-  desktop/        Electron main, preload, engine process
+  web/            React, Vite, worker
   mcp/            read-only stdio server
 packages/
-  core/           types, rules, importers, Cypher, EnginePort
-  ui/             board, proof, simulator, import
+  core/           rules, Cypher, money, fixes, import, report
 demo/
   store/          committed Relate directory store for judges
 docs/
@@ -135,15 +131,11 @@ WHERE a.id IN $stack AND b.id IN $stack AND a.id < b.id
 RETURN a.title AS left, b.title AS right, c.rule AS why
 ```
 
-### Q3 Fix candidates (to verify)
+### Q3 Fix candidates (implemented)
 
-For each discount in a leaking group, candidates are: untick one class, remove one accepted tag, or end the discount.
+For each discount in a leaking group the candidates are: untick one class, remove one accepted tag, or end the discount. `NEIGHBORS` returns the pairs each one cuts. A change clears a product exactly when it cuts every leaking group, because removing pairs can only remove groups. Ties go to the fewest profitable groups broken. When no single change clears a product, changes are combined into a plan.
 
-1. Query the edge keys that setting creates.
-2. Re-run Q1 with them in `$removed`. Ending a discount also needs a `$disabled` filter on `ds`, so single-discount leaks clear.
-3. Rank by leaks cleared, then fewest non-leaking combinations broken, then fewest settings changed.
-
-Shopify has no "disable this pair" switch, so every suggested fix must map to a real setting.
+Tests prove that each preview equals really changing the setting. Shopify has no "disable this pair" switch, so every fix maps to a real setting.
 
 ### Q4 Search completeness (implemented)
 
@@ -155,29 +147,14 @@ Groups are enumerated once per distinct reach, with a cap of 25,000 per reach. O
 
 ## 7. Engine interface
 
-```ts
-type State = 'leak' | 'thin' | 'unknown' | 'clear_in_model';
-interface Scenario { removed: string[]; disabled: string[]; maxQty: number; shippingCost: number; floorPct: number }
-
-interface EnginePort {
-  audit(s: Scenario): Promise<AuditResult>;
-  explain(stack: string[]): Promise<PairRule[]>;
-  fixes(leakId: string, s: Scenario): Promise<Fix[]>;
-  execute(c: Command): Promise<CommandResult>;
-  importFiles(files: InputFile[]): Promise<ImportResult>;
-  exportAudit(): Promise<AuditFile>;
-}
-```
-
-The UI never sends Cypher. What-if never writes.
+`Workspace` in `packages/core/src/workspace.ts` is the whole application API. The screens reach an allow-list of its methods through the worker (`apps/web/src/protocol.ts`) and never send Cypher.
 
 ## 8. Storage
 
 | Surface | Mode | Behavior |
 |---|---|---|
-| Public demo | Memory, WASM | Synthetic store, resets on reload |
-| Browser audit | OPFS, WASM | Persists, one tab at a time |
-| Desktop | Directory, native | One writer in a restartable process |
+| Browser audit | OPFS, WASM, two slots | A save builds the idle slot and marks it complete last. One tab at a time |
+| `?demo` | Memory, WASM | Never saves |
 | MCP | Directory, read-only | Fresh open on every call |
 | Repository | Directory | Checkpointed, marked binary in Git |
 
@@ -190,7 +167,8 @@ Directory mode is used because a single-file store blocked a second reader durin
 | `audit_store` | Counts, top leaks, unknowns |
 | `explain_leak` | Arithmetic and pairwise rules |
 | `simulate_settings` | Leaks closed and combinations broken |
-| `check_variant` | State for one SKU |
+| `check_variant` | State for matching products |
+| `check_promotion` | What a promotion would break, before it exists |
 
 All are read-only, with no arbitrary Cypher.
 
@@ -198,7 +176,6 @@ All are read-only, with no arbitrary Cypher.
 
 - No credentials, customers or orders are imported.
 - Web CSP uses `connect-src 'self'`.
-- Electron has context isolation, a sandboxed renderer and validated IPC.
 - Imported titles render as text and CSV exports escape formula prefixes.
 - The repository and video use synthetic data.
 
@@ -211,5 +188,5 @@ All are read-only, with no arbitrary Cypher.
 | 3 | Unknown over a guessed Clear | A false Clear costs real money |
 | 4 | Files before OAuth | No app review or credentials for judges |
 | 5 | Audit, not checkout enforcement | Enforcement is crowded and needs Functions |
-| 6 | Electron with `--no-asar` | Tested packaging requirement |
+| 6 | No desktop app for now | Scope decision. Browser and MCP cover the flows |
 | 7 | Browser is the fallback | Native Linux needs glibc 2.39+ |

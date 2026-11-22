@@ -27,7 +27,8 @@
     "test:mcp": "node --experimental-strip-types --no-warnings --test apps/mcp/server.test.ts",
     "store:import": "node --experimental-strip-types --no-warnings scripts/import-store.ts",
     "mcp": "node --experimental-strip-types --no-warnings apps/mcp/server.ts",
-    "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e.ts"
+    "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e.ts",
+    "start": "npm run build && npm run preview -- --port 4173"
   },
   "devDependencies": {
     "@types/node": "22.15.0",
