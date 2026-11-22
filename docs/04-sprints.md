@@ -24,6 +24,8 @@ One person, 5 hours a day, Nov 23 to Dec 11: **95 hours, 75 planned and 20 buffe
 | L106 | Sample, committed store, parity and clone tests | S01 | 3 | L104 |
 | | **Total** | | **19** | |
 
+**Status:** L101 and L103-L106 done. L102 is blocked until a Shopify development store exists.
+
 **Exit gate:** both sample leaks match, the false trio is absent, and 500 variants with 15 discounts audit in under 3 seconds in WASM.
 
 ## Sprint 2: Browser product

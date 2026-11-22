@@ -107,41 +107,27 @@ The modeled cart holds one variant, quantity 1 to `max_qty`. Free shipping costs
 
 ## 6. Query contract
 
-### Q1 Leaks (tested on 3 variants and 6 discounts, native and WASM)
+### Q1 Groups and leaks (implemented)
+
+The source of truth is `packages/core/src/queries.ts`.
+
+1. `DERIVE_PAIRS` writes one edge per compatible pair, with its rule.
+2. `SCOPE` finds which discounts reach each variant. Variants with the same reach share one search.
+3. `EXTEND_GROUPS` grows groups one discount at a time through common neighbors:
 
 ```cypher
-MATCH (v:Variant)
-MATCH p = (first:Discount)-[:COMBINES_WITH*0..7]->(:Discount)
-WITH v, nodes(p) AS ds
-WHERE ALL(d IN ds WHERE d.all_variants OR EXISTS { MATCH (d)-[:APPLIES_TO]->()<-[:IN*0..1]-(v) })
-  AND ALL(i IN range(0, size(ds)-1) WHERE ALL(j IN range(0, size(ds)-1) WHERE
-    j <= i OR EXISTS {
-      WITH ds[i] AS a, ds[j] AS b
-      MATCH (a)-[c:COMBINES_WITH]->(b) WHERE NOT c.key IN $removed
-    }))
-  AND size([d IN ds WHERE d.method = 'code' AND d.class <> 'shipping']) <= 5
-UNWIND range(1, $max_qty) AS q
-WITH v, ds, q, toFloat(v.price * q) AS listed
-WITH v, ds, q, listed,
-  reduce(t = listed, d IN [x IN ds WHERE x.class = 'product'] | t * (1 - d.pct / 100.0) - d.off * q) AS sub
-WHERE ALL(d IN ds WHERE d.min_subtotal <= CASE WHEN d.class = 'product' THEN listed ELSE sub END)
-WITH v, ds, q,
-  sub - reduce(t = 0.0, d IN [x IN ds WHERE x.class = 'order'] | t + sub * d.pct / 100.0 + d.off)
-      - CASE WHEN ANY(d IN ds WHERE d.class = 'shipping') THEN $shipping_cost ELSE 0 END AS net
-WHERE net < v.cost * q
-RETURN v.id AS variant, q AS qty, [d IN ds | d.id] AS stack, round(net) AS net, v.cost * q AS cost
-ORDER BY net - cost, variant, qty
+UNWIND $groups AS row
+UNWIND row.members AS member
+MATCH (:Discount {id: member})-[c:COMBINES_WITH]->(next:Discount)
+WHERE NOT c.key IN $removed AND next.id IN $profiles[row.profile]
+WITH row.profile AS profile, row.members AS members, next.id AS added, count(c) AS linked
+WHERE linked = size(members)
+RETURN profile, members + [added] AS members
 ```
 
-What the run showed:
+4. `money.ts` prices each group with exact integers. It is kept out of Cypher to avoid float rounding and to share results between variants with the same reach and price.
 
-- Jacket: three discounts, $60 net against $65 cost. Removing one pair clears it.
-- Boots: two tagged product discounts, $60 against $62.
-- A third Boots discount compatible with only one of the two was correctly excluded.
-
-The arithmetic encodes D6, D7 and an assumed answer to D10. It is not proven equal to Shopify checkout.
-
-### Q2 Explain a pair (to verify)
+### Q2 Explain a pair (implemented)
 
 ```cypher
 MATCH (a:Discount)-[c:COMBINES_WITH]-(b:Discount)
@@ -159,13 +145,13 @@ For each discount in a leaking group, candidates are: untick one class, remove o
 
 Shopify has no "disable this pair" switch, so every suggested fix must map to a real setting.
 
-### Q4 Search completeness (to verify)
+### Q4 Search completeness (implemented)
 
 Return any variant with a fully connected applicable group of nine discounts and mark it Unknown.
 
-### Scaling constraint
+### Scaling
 
-Q1 expands groups once per variant and will grow combinatorially. Twenty mutually compatible store-wide discounts give 125,970 groups of size eight alone. The production query must enumerate valid groups once, join applicable variants second and deduplicate identical price, cost and scope profiles. Sprint 1 has a load gate for this.
+Groups are enumerated once per distinct reach, with a cap of 25,000 per reach. Over the cap the result is Unknown. The load gate is 500 variants and 15 discounts in under 3 seconds in both engines.
 
 ## 7. Engine interface
 
@@ -220,7 +206,7 @@ All are read-only, with no arbitrary Cypher.
 
 | ADR | Decision | Reason |
 |---|---|---|
-| 1 | Relate finds and proves groups | All-pairs compatibility is the core graph problem |
+| 1 | Relate finds and proves groups, TypeScript does the money | All-pairs compatibility is the graph problem. Money needs exact integers |
 | 2 | Derived pair edge keeps its rule | Fast traversal with an explanation |
 | 3 | Unknown over a guessed Clear | A false Clear costs real money |
 | 4 | Files before OAuth | No app review or credentials for judges |
