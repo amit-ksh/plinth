@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.webp binary
+*.png binary
+*.woff2 binary
+
+# A Relate store will not open if Git rewrites its line endings.
+demo/store/** binary
