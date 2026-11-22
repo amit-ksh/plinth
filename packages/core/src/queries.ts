@@ -3,7 +3,7 @@
 export const IS_EMPTY = `MATCH (n) RETURN count(n) AS n`;
 
 export const INDEXES = ['Variant', 'Collection', 'Discount', 'Tag', 'Class'].map(
-  (label) => `CREATE INDEX FOR (n:${label}) ON (n.id)`,
+  (label) => `CREATE INDEX ${label.toLowerCase()}_id IF NOT EXISTS FOR (n:${label}) ON (n.id)`,
 );
 
 export const CREATE_STORE = `CREATE (:Store {id: 'store', plus: $plus})`;
@@ -81,3 +81,36 @@ export const EXPLAIN_STACK = `MATCH (a:Discount)-[c:COMBINES_WITH]->(b:Discount)
 WHERE a.id IN $stack AND b.id IN $stack
 RETURN c.key AS key, a.id AS left, b.id AS right, c.rule AS rule
 ORDER BY key`;
+
+/** For fix ranking: each neighbor, and the tags that let a product pair stack. */
+export const NEIGHBORS = `MATCH (d:Discount)-[c:COMBINES_WITH]-(other:Discount)
+WHERE d.id IN $ids
+RETURN d.id AS discount, other.class AS otherClass, c.key AS key,
+  [(d)-[:ACCEPTS_TAG]->(t:Tag)<-[:HAS_TAG]-(other) | t.id] AS shared
+ORDER BY discount, key`;
+
+const readLinks = (from: string, type: string, to: string) => `MATCH (a:${from})-[:${type}]->(b:${to})
+RETURN DISTINCT a.id AS from, b.id AS to`;
+
+export const READ_IN = readLinks('Variant', 'IN', 'Collection');
+export const READ_TO_VARIANT = readLinks('Discount', 'APPLIES_TO', 'Variant');
+export const READ_TO_COLLECTION = readLinks('Discount', 'APPLIES_TO', 'Collection');
+export const READ_ALLOWS = readLinks('Discount', 'ALLOWS', 'Class');
+export const READ_HAS_TAG = readLinks('Discount', 'HAS_TAG', 'Tag');
+export const READ_ACCEPTS_TAG = readLinks('Discount', 'ACCEPTS_TAG', 'Tag');
+export const READ_PLUS = `MATCH (s:Store {id: 'store'}) RETURN s.plus AS plus`;
+export const READ_COLLECTIONS = `MATCH (c:Collection) RETURN c.id AS id, c.title AS title ORDER BY id`;
+export const READ_DISCOUNTS = `MATCH (d:Discount)
+RETURN d.id AS id, d.title AS title, d.class AS class, d.method AS method, d.bps AS bps, d.off AS off,
+  d.all_variants AS allVariants, d.min_subtotal AS minSubtotal, d.starts AS starts, d.ends AS ends,
+  d.supported AS supported
+ORDER BY id`;
+
+export const WRITE_APP = `MERGE (a:App {id: 'app'}) SET a.json = $json`;
+export const READ_APP = `MATCH (a:App {id: 'app'}) RETURN a.json AS json`;
+
+/** The last write of a save. A slot without it is never opened. */
+export const MARK_COMPLETE = `CREATE (:Save {id: 'save', generation: $generation})`;
+export const READ_COMPLETE = `MATCH (s:Save {id: 'save'}) RETURN s.generation AS generation`;
+export const UNMARK_COMPLETE = `MATCH (s:Save) DETACH DELETE s`;
+export const CLEAR = `MATCH (n) DETACH DELETE n`;

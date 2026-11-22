@@ -76,7 +76,7 @@ function findGroups(db: Driver, profiles: Profile[], byId: Map<string, DiscountR
   }
 }
 
-export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: boolean } = {}): AuditResult {
+export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: boolean; focus?: string } = {}): AuditResult {
   checkScenario(scenario);
   const { shippingCost, maxQty, floorBps = 0, asOf = null, removed = [], disabled = [] } = scenario;
 
@@ -143,6 +143,7 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
       worst: null,
       leakCount: 0,
       leaks: [],
+      focus: null,
       unknown,
     };
     let thin = false;
@@ -159,6 +160,12 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
         if (margin < 0) {
           row.leakCount++;
           if (options.collectLeaks) row.leaks.push({ qty, stack: [...stack], net, cost: total });
+          if (options.focus && stack.includes(options.focus)) {
+            const worstWith = row.focus;
+            if (!worstWith || margin * worstWith.qty < (worstWith.net - worstWith.cost) * qty) {
+              row.focus = { qty, stack: [...stack], net, cost: total };
+            }
+          }
         } else if (floorBps > 0 && margin * 10000 < floorBps * net) {
           thin = true;
         }
@@ -180,6 +187,9 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
     result.variants.push(row);
   }
 
+  if (options.collectLeaks) {
+    result.groups = [...new Map(profiles.flatMap((p) => p.groups).map((g) => [g.join('|'), g])).values()];
+  }
   return result;
 }
 

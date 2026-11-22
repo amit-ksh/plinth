@@ -13,7 +13,27 @@ export class InputError extends Error {
   }
 }
 
+/** Backups and agent input are untrusted, so check shapes before reading any field. */
+function checkShape(input: StoreInput): void {
+  const text = (v: unknown) => typeof v === 'string' && v.length <= 500;
+  const texts = (v: unknown) => Array.isArray(v) && v.length <= 100_000 && v.every(text);
+  const rows = (v: unknown) => Array.isArray(v) && v.length <= 100_000 && v.every((r) => r && typeof r === 'object');
+  const ok =
+    input &&
+    typeof input.plus === 'boolean' &&
+    rows(input.collections) && input.collections.every((c) => text(c.id) && text(c.title)) &&
+    rows(input.variants) && input.variants.every((v) => text(v.id) && text(v.title) && texts(v.collections)) &&
+    rows(input.discounts) &&
+    input.discounts.every(
+      (d) =>
+        text(d.id) && text(d.title) && typeof d.allVariants === 'boolean' && typeof d.supported === 'boolean' &&
+        texts(d.variants) && texts(d.collections) && texts(d.combinesWith) && texts(d.tags) && texts(d.acceptsTags),
+    );
+  if (!ok) throw new InputError(['The store data has missing or badly formed fields']);
+}
+
 export function validate(input: StoreInput): void {
+  checkShape(input);
   const issues: string[] = [];
   const amount = (at: string, value: number, max = Number.MAX_SAFE_INTEGER) => {
     if (!Number.isSafeInteger(value) || value < 0 || value > max) issues.push(`${at}: use a whole number from 0 to ${max}`);

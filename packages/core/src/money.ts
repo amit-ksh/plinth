@@ -1,5 +1,11 @@
 import type { DiscountClass } from './types.ts';
 
+export interface ReceiptLine {
+  label: string;
+  kind: 'price' | DiscountClass;
+  amount: number;
+}
+
 export interface Priced {
   class: DiscountClass;
   bps: number;
@@ -56,4 +62,26 @@ export function netRevenue(stack: readonly Priced[], price: number, qty: number,
   let rounded = doubled / divisor;
   if (doubled < 0n && doubled % divisor !== 0n) rounded -= 1n; // BigInt division truncates toward zero
   return Number(rounded);
+}
+
+/** One line per discount, in the order it applies. The lines always add up to the net. */
+export function breakdown(
+  stack: readonly (Priced & { id: string })[],
+  price: number,
+  qty: number,
+  shippingCost: number,
+): ReceiptLine[] {
+  const order = { product: 0, order: 1, shipping: 2 };
+  const sorted = [...stack].sort((a, b) => order[a.class] - order[b.class]);
+  const lines: ReceiptLine[] = [{ label: qty === 1 ? 'Price' : `Price × ${qty}`, kind: 'price', amount: price * qty }];
+  const applied: Priced[] = [];
+  let before = price * qty;
+  for (const d of sorted) {
+    // The stack already met its thresholds, so prefixes are priced without them.
+    applied.push({ class: d.class, bps: d.bps, off: d.off, minSubtotal: 0 });
+    const after = netRevenue(applied, price, qty, shippingCost)!;
+    lines.push({ label: d.id, kind: d.class, amount: after - before });
+    before = after;
+  }
+  return lines;
 }

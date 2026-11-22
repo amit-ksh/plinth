@@ -1,7 +1,15 @@
 export * from './types.ts';
 export * as queries from './queries.ts';
 export { audit, explainStack, MAX_CODES, MAX_GROUPS_PER_PROFILE, MAX_STACK } from './audit.ts';
-export { netRevenue } from './money.ts';
+export { breakdown, netRevenue, type ReceiptLine } from './money.ts';
+export * from './app-state.ts';
+export { DISCOUNTS_TEMPLATE, importCsv, parseCsv, PRODUCTS_TEMPLATE } from './csv.ts';
+export { applyChanges, changeId, suggestFixes, type Change, type Fix } from './fixes.ts';
+export * from './format.ts';
+export { PRODUCT_NAME } from './product.ts';
+export { parsePromotion, type PromotionParse } from './promotion.ts';
+export { readStore } from './read.ts';
+export * from './workspace.ts';
 export { SAMPLE_SCENARIO, SAMPLE_STORE } from './sample.ts';
 export { loadStore } from './store.ts';
 export { InputError, validate } from './validate.ts';

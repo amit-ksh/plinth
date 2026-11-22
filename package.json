@@ -4,20 +4,30 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22.16" },
-  "workspaces": ["packages/*"],
+  "engines": {
+    "node": ">=22.16"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json",
     "test": "npm run test:oracle && npm run test:native && npm run test:wasm && npm run test:store",
     "test:oracle": "node --experimental-strip-types --test packages/core/test/oracle.selftest.ts",
     "test:native": "node --experimental-strip-types --test packages/core/test/engine.native.test.ts",
     "test:wasm": "node --experimental-strip-types --test packages/core/test/engine.wasm.test.ts",
     "test:store": "node --experimental-strip-types --test packages/core/test/store.test.ts",
     "demo:build": "node --experimental-strip-types scripts/build-store.ts",
-    "demo:audit": "node --experimental-strip-types scripts/audit-demo.ts"
+    "demo:audit": "node --experimental-strip-types scripts/audit-demo.ts",
+    "dev": "npm run dev -w @app/web",
+    "build": "npm run build -w @app/web",
+    "preview": "npm run preview -w @app/web"
   },
   "devDependencies": {
     "@types/node": "22.15.0",
+    "axe-core": "4.11.0",
+    "playwright-core": "1.56.1",
     "typescript": "5.9.3"
   }
 }

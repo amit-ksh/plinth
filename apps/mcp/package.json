@@ -1,0 +1,12 @@
+{
+  "name": "@app/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@relate/relate": "1.2.0",
+    "zod": "3.25.76"
+  }
+}

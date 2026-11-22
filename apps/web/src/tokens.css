@@ -1,0 +1,135 @@
+/*
+  The single source of design values.
+
+  Color: sampled from docs/design/inspiration/app-branding-colors.webp.
+  Shape and proportion: measured from docs/design/inspiration/dashboard-layout.webp.
+  Components use semantic tokens only. Green never means "safe". Red is only a leak. Amber is only unknown.
+*/
+:root {
+  /* Sampled from the branding image */
+  --forest-950: #02251a;
+  --forest-900: #023425;
+  --forest-800: #044c32;
+  --emerald-700: #035237;
+  --green-600: #23713e;
+  --leaf-500: #38792f;
+  --sage-500: #448065;
+  --moss-400: #698d66;
+  --olive-300: #999f61;
+  --mist-300: #8da79a;
+  --sand-200: #d7d0b3;
+  --cream-100: #f8eee5;
+
+  /* Derived from the cream and the sage, for quiet surfaces */
+  --cream-0: #fffefd;
+  --cream-25: #fdfbf9;
+  --cream-50: #faf7f3;
+  --cream-75: #f4efe8;
+  --cream-200: #e9e3da;
+  --sage-50: #edf4ec;
+  --sage-100: #dceadb;
+  --sage-650: #62786b;
+  --ink-600: #475a50;
+
+  /* Status */
+  --red-50: #fdf1ee;
+  --red-200: #f2d3cd;
+  --red-700: #a3262a;
+  --amber-50: #fdf5e6;
+  --amber-200: #eedfbd;
+  --amber-800: #7a4b0b;
+
+  /* Surfaces */
+  --color-bg-page: var(--cream-200);
+  --color-bg-window: var(--cream-0);
+  --color-bg-panel: var(--cream-50);
+  --color-bg-surface: var(--cream-25);
+  --color-bg-raised: var(--cream-0);
+  --color-bg-sunken: var(--cream-75);
+  --color-bg-hover: var(--cream-75);
+  --color-bg-brand: var(--cream-100);
+
+  /* Text */
+  --color-text-primary: var(--forest-950);
+  --color-text-secondary: var(--ink-600);
+  --color-text-on-accent: var(--cream-100);
+
+  /* Borders */
+  --color-border-subtle: var(--cream-200);
+  --color-border-separator: var(--cream-200);
+  --color-border-control: var(--sage-650);
+  --color-border-focus: var(--green-600);
+
+  /* Accent */
+  --color-accent-subtle: var(--sage-50);
+  --color-accent-badge: var(--sage-100);
+  --color-accent-border: var(--sage-500);
+  --color-accent-solid: var(--forest-950);
+  --color-accent-solid-hover: var(--forest-800);
+  --color-accent-text: var(--forest-800);
+
+  /* Status */
+  --color-danger-subtle: var(--red-50);
+  --color-danger-border: var(--red-200);
+  --color-danger-text: var(--red-700);
+  --color-warning-subtle: var(--amber-50);
+  --color-warning-border: var(--amber-200);
+  --color-warning-text: var(--amber-800);
+
+  /* Atmosphere, only behind the window and under the sidebar's lower edge */
+  --gradient-page:
+    radial-gradient(ellipse 34% 62% at -2% 104% in oklab, var(--forest-900) 0%, var(--emerald-700) 24%, var(--leaf-500) 46%, var(--olive-300) 66%, transparent 100%),
+    radial-gradient(ellipse 30% 44% at 104% 100% in oklab, var(--sage-500) 0%, var(--mist-300) 46%, transparent 100%),
+    radial-gradient(ellipse 40% 50% at 100% 0% in oklab, var(--cream-100) 0%, transparent 100%),
+    radial-gradient(ellipse 70% 40% at 40% -10% in oklab, var(--sand-200) 0%, transparent 100%);
+  --gradient-sidebar: linear-gradient(to top in oklab, var(--sage-100) 0%, var(--cream-50) 34%);
+  --gradient-mark: radial-gradient(circle at 78% 18% in oklab, var(--olive-300) 0%, var(--green-600) 36%, var(--forest-950) 82%);
+  --color-guide: rgb(2 37 26 / 0.18);
+
+  /* Type */
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", Consolas, ui-monospace, monospace;
+  --text-label: 0.75rem;
+  --text-caption: 0.8125rem;
+  --text-ui: 0.875rem;
+  --text-body: 1rem;
+  --text-heading: 1.125rem;
+  --text-title: 1.5rem;
+  --text-display: 1.875rem;
+
+  /* Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* Shape */
+  --radius-small: 6px;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-composer: 20px;
+  --radius-window: 28px;
+  --radius-pill: 999px;
+
+  /* Measured: sidebar is 19% of the window, seams are 6px, nav rows 40px */
+  --size-sidebar: clamp(232px, 18vw, 264px);
+  --size-sidebar-collapsed: 76px;
+  --size-topbar: 64px;
+  --size-seam: 6px;
+  --size-target: 40px;
+  --width-hero: 640px;
+  --width-page: 760px;
+
+  /* Elevation */
+  --shadow-window: 0 24px 64px -28px rgb(2 37 26 / 0.3);
+  --shadow-border:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 1px 2px -1px rgb(0 0 0 / 0.06),
+    0 2px 4px 0 rgb(0 0 0 / 0.04);
+
+  /* Motion */
+  --duration-fast: 150ms;
+}

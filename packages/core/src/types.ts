@@ -66,6 +66,8 @@ export interface VariantAudit {
   leakCount: number;
   /** Filled only when `collectLeaks` is set. */
   leaks: Outcome[];
+  /** With `focus`, the worst leak containing that discount. */
+  focus: Outcome | null;
   unknown: UnknownReason[];
 }
 
@@ -73,6 +75,8 @@ export interface AuditResult {
   variants: VariantAudit[];
   counts: Record<State, number>;
   groupsSearched: number;
+  /** With `collectLeaks`, every distinct group found. */
+  groups?: string[][];
 }
 
 export interface PairRule {
