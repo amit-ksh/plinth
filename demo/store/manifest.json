@@ -1,0 +1,146 @@
+{
+  "format_version": 5,
+  "next_node_id": 74,
+  "next_rel_id": 88,
+  "checkpoint_lsn": 6,
+  "commit_ts": 6,
+  "node_parts": [
+    {
+      "path": "nodes/0-262144-4399fabc507146bd34b6d0fc28fad219.parquet",
+      "id_lo": 0,
+      "id_hi": 262144,
+      "rows": 74,
+      "bytes": 3845
+    }
+  ],
+  "rel_parts": [
+    {
+      "path": "relationships/0-262144-f9a54d2b3b982bb50942ebf37c54049f.parquet",
+      "id_lo": 0,
+      "id_hi": 262144,
+      "rows": 88,
+      "bytes": 2541
+    }
+  ],
+  "bytes_per_node": 51.95945945945946,
+  "bytes_per_rel": 28.875,
+  "codec": "parquet",
+  "indexes": [
+    {
+      "name": "Class_id",
+      "label": "Class",
+      "property": "id"
+    },
+    {
+      "name": "Collection_id",
+      "label": "Collection",
+      "property": "id"
+    },
+    {
+      "name": "Discount_id",
+      "label": "Discount",
+      "property": "id"
+    },
+    {
+      "name": "Tag_id",
+      "label": "Tag",
+      "property": "id"
+    },
+    {
+      "name": "Variant_id",
+      "label": "Variant",
+      "property": "id"
+    }
+  ],
+  "constraints": [],
+  "theater": {
+    "databases": {
+      "neo4j": [
+        25,
+        false
+      ],
+      "system": [
+        25,
+        false
+      ],
+      "system_ontologies": [
+        25,
+        false
+      ]
+    },
+    "index_details": {
+      "Class_id": {
+        "kind": "Range",
+        "relationship": false,
+        "labels": [
+          "Class"
+        ],
+        "properties": [
+          "id"
+        ],
+        "with_properties": []
+      },
+      "Collection_id": {
+        "kind": "Range",
+        "relationship": false,
+        "labels": [
+          "Collection"
+        ],
+        "properties": [
+          "id"
+        ],
+        "with_properties": []
+      },
+      "Discount_id": {
+        "kind": "Range",
+        "relationship": false,
+        "labels": [
+          "Discount"
+        ],
+        "properties": [
+          "id"
+        ],
+        "with_properties": []
+      },
+      "Tag_id": {
+        "kind": "Range",
+        "relationship": false,
+        "labels": [
+          "Tag"
+        ],
+        "properties": [
+          "id"
+        ],
+        "with_properties": []
+      },
+      "Variant_id": {
+        "kind": "Range",
+        "relationship": false,
+        "labels": [
+          "Variant"
+        ],
+        "properties": [
+          "id"
+        ],
+        "with_properties": []
+      }
+    },
+    "index_options": {
+      "Class_id": {},
+      "Collection_id": {},
+      "Discount_id": {},
+      "Tag_id": {},
+      "Variant_id": {}
+    },
+    "graph_types": {},
+    "current_graph_type": {
+      "node_types": [],
+      "edge_types": [],
+      "constraints": [],
+      "drop_constraint_names": []
+    },
+    "derived_constraints": {}
+  },
+  "query_engine": "in-memory",
+  "write_engine": "local"
+}
