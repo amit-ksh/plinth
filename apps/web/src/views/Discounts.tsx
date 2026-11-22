@@ -91,7 +91,7 @@ export function Discounts({ id }: { id?: string }) {
                       : !d.supported
                         ? amountOf(d, money)
                         : d.combinesWith.length
-                          ? `With ${new Intl.ListFormat('en', { type: 'conjunction' }).format(d.combinesWith)}`
+                          ? `Combines with ${new Intl.ListFormat('en', { type: 'conjunction' }).format(d.combinesWith)}`
                           : 'Doesn’t combine'}
                   </span>
                   <Icon icon={ArrowRight01Icon} />

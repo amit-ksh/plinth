@@ -45,8 +45,8 @@ export function Audit() {
     <Page
       title={counts.leak ? plural(counts.leak, { one: '{n} product sells below cost', other: '{n} products sell below cost' }) : 'No leaks found'}
       lead={plural(variants.length, {
-        one: '{n} product checked against every discount stack a customer could use.',
-        other: '{n} products checked against every discount stack a customer could use.',
+        one: '{n} product checked against the discount stacks your settings allow.',
+        other: '{n} products checked against the discount stacks your settings allow.',
       })}
     >
       {counts.leak > 0 && (

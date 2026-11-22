@@ -83,6 +83,7 @@ function StoreMenu() {
   const save = async (kind: 'backup' | 'report') => {
     menu.current!.open = false;
     menu.current!.querySelector('summary')?.focus();
+    if (kind === 'report') notify('Preparing your report…');
     try {
       const text = await call(kind);
       if (kind === 'backup') download('audit-backup.json', text, 'application/json');

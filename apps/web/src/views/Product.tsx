@@ -132,18 +132,20 @@ export function Product({ id }: { id: string }) {
   }
 
   const { state, worst } = row;
+  // No discount setting can fix a price that is already under the cost.
+  const pricedBelowCost = row.cost !== null && row.price < row.cost;
   const loss = worst ? worst.cost - worst.net : 0;
   const stacked = worst?.stack.length ?? 0;
 
   const title = state === 'leak' ? `${row.title} loses ${money(loss)}` : row.title;
   let lead: string;
   if (state === 'leak') {
-    lead = stacked
+    lead = stacked && !pricedBelowCost
       ? plural(stacked, {
           one: `{n} discount is enough to bring it below the ${money(worst!.cost / worst!.qty)} it costs you.`,
           other: `{n} discounts can be used together, and then it sells below the ${money(worst!.cost / worst!.qty)} it costs you.`,
         })
-      : 'Its price is lower than its cost, even with no discount.';
+      : 'Its price is lower than its cost, even with no discount. Discounts make the loss bigger.';
   } else if (state === 'unknown') lead = row.unknown.map((u) => UNKNOWN_TEXT[u]).join(' ');
   else if (state === 'thin') lead = 'It stays above cost, but below the margin you set.';
   else lead = 'No discount stack in the modeled rules sells it below cost.';
@@ -171,6 +173,22 @@ export function Product({ id }: { id: string }) {
             {preview ? <span className="badge">Preview, nothing changed</span> : <StateBadge state={state} />}
           </div>
           <Receipt explained={shown} />
+        </section>
+      )}
+
+      {state === 'leak' && !fix && !issues.length && (
+        <section className="card" aria-labelledby="fix-title" aria-busy={!detail}>
+          <h2 id={detail ? 'fix-title' : undefined}>{detail ? 'How to fix it' : 'Finding the smallest fix…'}</h2>
+          {detail && (
+            <>
+              <p>
+                {pricedBelowCost
+                  ? `Raise the price above ${money(row.cost!)}, or correct the cost if it’s wrong. No discount setting can fix this.`
+                  : 'No single setting closes this. Review the discounts in the stack above.'}
+              </p>
+              <div className="actions"><a className="btn" href="#discounts">Review discounts</a></div>
+            </>
+          )}
         </section>
       )}
 

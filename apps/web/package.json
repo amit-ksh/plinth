@@ -13,7 +13,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "@vitejs/plugin-react": "5.0.4",
-    "vite": "7.1.12"
+    "vite": "7.3.8"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "5.2.7",

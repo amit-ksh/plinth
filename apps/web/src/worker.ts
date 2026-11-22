@@ -1,5 +1,6 @@
 import wasmUrl from '@relate/relate-wasm/relate_bg.wasm?url';
 import { createSlots } from '../../../packages/core/src/slots.ts';
+import type { Driver } from '../../../packages/core/src/types.ts';
 import { InputError } from '../../../packages/core/src/validate.ts';
 import { openWasm } from '../../../packages/core/src/wasm.ts';
 import { Workspace, type Persistence, type Saved } from '../../../packages/core/src/workspace.ts';
@@ -16,9 +17,11 @@ async function connect(): Promise<Persistence> {
   if (!navigator.storage?.getDirectory) return inMemory('unavailable');
 
   // On a reload the previous worker can hold the lock for a moment.
+  let first: Driver | undefined;
   for (let attempt = 0; ; attempt++) {
     try {
-      const first = await open('opfs://audit-a');
+      // Kept between attempts: this worker would otherwise block itself.
+      first ??= await open('opfs://audit-a');
       const second = await open('opfs://audit-b');
       return createSlots([first, second], scratch, 'device');
     } catch (error) {

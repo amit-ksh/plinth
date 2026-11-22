@@ -119,7 +119,7 @@ export function Home() {
       <div className="intro">
         <span className="trust">
           <Icon icon={ShieldCheckIcon} size={15} />
-          Every possible discount stack, checked on your device
+          Discount stacks checked on your device
         </span>
         <h1 tabIndex={-1}>What are you launching next?</h1>
         <p className="muted">Describe a promotion. See whether it would sell anything below cost before it goes live.</p>
@@ -137,7 +137,7 @@ export function Home() {
               value={text}
               rows={3}
               autoComplete="off"
-              placeholder="20% off winter, or free shipping over $50"
+              placeholder={`20% off winter, or free shipping over ${money(5000)}`}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'promotion-error' : undefined}
               onChange={(e) => setText(e.target.value)}
