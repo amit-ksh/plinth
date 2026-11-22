@@ -1,5 +1,7 @@
 # 03 UX and demo
 
+The visual source of truth is the [design system](design/README.md) and its [interactive mockup](design/mockup.html). Where a wireframe below differs, the mockup wins.
+
 ## Principles
 
 1. Open on a working audit.
@@ -10,7 +12,8 @@
 ## Navigation
 
 ```text
-Audit | Discounts | Products | Import | Connect agent          Store: Demo v
+Sidebar: Audit | Check a promotion | Discounts | Products | Import | Connect agent
+Top bar: Store: Demo      [ Audit | Check ]      Connect agent
 ```
 
 ## S1 Audit (home)

@@ -78,6 +78,22 @@ One person, 5 hours a day, Nov 23 to Dec 11: **95 hours, 75 planned and 20 buffe
 
 **Exit gate:** submitted by Dec 10.
 
+## Model and effort by task
+
+Use the cheapest model that can do the task safely. Anything that decides whether money is lost gets the strongest one.
+
+| Work | Tasks | Model | Effort | Why |
+|---|---|---|---|---|
+| Rules, Cypher, scaling, fix ranking | L103-L105, L204, L402 | Opus | High | A wrong answer is a false Clear |
+| Independent test evaluator | L106 | Sonnet | Medium | Bounded spec, kept apart from the engine's author |
+| Visual direction, interface review | L202-L203, sprint gates | Opus | Medium | Judgment, using the better-* skills |
+| Screens from the approved mockup, import, MCP | L201, L205, L301, L304, L401 | Sonnet | Medium | Clear contracts and tests |
+| Electron packaging and process handling | L302-L303 | Sonnet | High | Known native-module traps |
+| Scaffolding, CI, fixtures, link checks | L101, L206 | Haiku | Low | Mechanical and easy to verify |
+| Final correctness and security review | L501 | Opus | High | Last gate before submission |
+
+Delegated work is reviewed and its tests re-run before it is committed.
+
 ## If we fall behind
 
 Cut in this order:
