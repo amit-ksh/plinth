@@ -28,7 +28,8 @@
     "store:import": "node --experimental-strip-types --no-warnings scripts/import-store.ts",
     "mcp": "node --experimental-strip-types --no-warnings apps/mcp/server.ts",
     "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e.ts",
-    "start": "npm run build && npm run preview"
+    "start": "npm run build && npm run preview",
+    "deploy": "npm run build && cd apps/web && npx --yes wrangler@4.166.0 deploy"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

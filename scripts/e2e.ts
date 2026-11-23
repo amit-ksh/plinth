@@ -16,7 +16,10 @@ const shots = process.env.SHOTS;
 if (shots) mkdirSync(shots, { recursive: true });
 
 const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
-const { server, url } = await serve(join(root, 'apps/web/dist'));
+// E2E_URL tests a deployed copy instead of the local build.
+const { server, url } = process.env.E2E_URL
+  ? { server: null, url: process.env.E2E_URL }
+  : await serve(join(root, 'apps/web/dist'));
 const profile = mkdtempSync(join(tmpdir(), 'stackleak-e2e-'));
 
 const failures: string[] = [];
@@ -475,7 +478,7 @@ try {
   });
 } finally {
   await context.close();
-  server.close();
+  server?.close();
   rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
 }
 

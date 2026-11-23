@@ -12,3 +12,4 @@ coverage/
 
 # The committed demo store contains a WAL named *.log
 !demo/store/**
+.wrangler/

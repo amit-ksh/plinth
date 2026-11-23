@@ -2,11 +2,13 @@
 
 Find the discount stack that sells below cost, before your customers do. (Working name.)
 
-![The home screen: describe a promotion, and see the products already selling below cost](docs/screenshots/home.png)
+![The home screen: the products selling below cost, the discounts that stack, and a promotion check](docs/screenshots/home.png)
 
 ## Try it
 
-Requires Node 22.16 or later.
+**Live:** [stackleak.amit-ksh.workers.dev](https://stackleak.amit-ksh.workers.dev). Everything runs in your browser on a synthetic sample store.
+
+To run it locally, you need Node 22.16 or later.
 
 ```bash
 npm ci
@@ -82,6 +84,8 @@ npm run dev            # dev server
 npm test               # both engines, an independent evaluator, features, clone, MCP
 npm run typecheck
 npm run build && npm run test:e2e    # real browser (Edge on Windows, Chrome elsewhere)
+E2E_URL=https://stackleak.amit-ksh.workers.dev/ npm run test:e2e   # same checks against the live copy
+npm run deploy         # build and publish to Cloudflare (needs wrangler login)
 ```
 
 ```text
