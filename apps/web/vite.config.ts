@@ -5,7 +5,8 @@ const POLICY = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self'",
-  "img-src 'self' data:",
+  // Product thumbnails may come from the store's image CDN. Nothing else loads from outside.
+  "img-src 'self' data: https:",
   "font-src 'self'",
   "connect-src 'self'",
   "worker-src 'self'",

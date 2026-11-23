@@ -13,6 +13,15 @@ export class InputError extends Error {
   }
 }
 
+/** Images are only ever shown, never fetched by the engine, and must be https. */
+export function isImageUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Backups and agent input are untrusted, so check shapes before reading any field. */
 function checkShape(input: StoreInput): void {
   const text = (v: unknown) => typeof v === 'string' && v.length <= 500;
@@ -22,7 +31,7 @@ function checkShape(input: StoreInput): void {
     input &&
     typeof input.plus === 'boolean' &&
     rows(input.collections) && input.collections.every((c) => text(c.id) && text(c.title)) &&
-    rows(input.variants) && input.variants.every((v) => text(v.id) && text(v.title) && texts(v.collections)) &&
+    rows(input.variants) && input.variants.every((v) => text(v.id) && text(v.title) && texts(v.collections) && (v.image === undefined || text(v.image))) &&
     rows(input.discounts) &&
     input.discounts.every(
       (d) =>
@@ -56,6 +65,7 @@ export function validate(input: StoreInput): void {
     const at = `variant "${v.id}"`;
     amount(`${at} price`, v.price);
     if (v.cost !== null) amount(`${at} cost`, v.cost);
+    if (v.image !== undefined && !isImageUrl(v.image)) issues.push(`${at}: use an image link that starts with https://`);
     for (const c of v.collections) {
       if (!collections.has(c)) issues.push(`${at}: collection "${c}" does not exist`);
     }

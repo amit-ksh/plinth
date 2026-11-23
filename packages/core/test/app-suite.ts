@@ -224,6 +224,21 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
     assert.deepEqual(audit(await loaded(store), SAMPLE_SCENARIO).variants.map((v) => v.state), ['unknown', 'clear_in_model']);
   });
 
+  test(`${name}: product images import from CSV, survive the graph, and must be https`, async () => {
+    const discounts = 'code,class,type,percent,applies_to,combines_with\nA,order,percent,10,all,\n';
+    const products = 'id,title,price,cost,collections,Image Src\na,A,100,20,Winter,https://cdn.example.com/a.jpg\nb,B,100,20,Winter,\n';
+    const store = importCsv({ products, discounts }, false);
+    assert.equal(store.variants[0].image, 'https://cdn.example.com/a.jpg');
+    assert.equal('image' in store.variants[1], false);
+    const back = readStore(await loaded(store));
+    assert.equal(back.variants.find((v) => v.id === 'a')!.image, 'https://cdn.example.com/a.jpg');
+    assert.equal('image' in back.variants.find((v) => v.id === 'b')!, false);
+    assert.throws(
+      () => importCsv({ products: products.replace('https://cdn', 'javascript://cdn'), discounts }, false),
+      (e) => e instanceof InputError && e.issues.some((i) => i.startsWith('products.csv, line 2') && i.includes('https://')),
+    );
+  });
+
   test(`${name}: backup restores the same audit, bad files change nothing`, async () => {
     const first = await workspace();
     first.setCost('gift-box', 1000);

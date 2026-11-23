@@ -26,6 +26,7 @@ export function readStore(db: Driver): StoreInput {
       price: v.price,
       cost: v.cost ?? null,
       collections: inCollection.get(v.id) ?? [],
+      ...(v.image ? { image: v.image } : {}),
     })),
     discounts: db.query<Discount>(Q.READ_DISCOUNTS).map((d) => ({
       id: d.id,

@@ -11,7 +11,7 @@ export const CREATE_CLASSES = `UNWIND ['product', 'order', 'shipping'] AS id CRE
 export const CREATE_COLLECTIONS = `UNWIND $rows AS r CREATE (:Collection {id: r.id, title: r.title})`;
 export const CREATE_VARIANTS = `UNWIND $rows AS r
 CREATE (v:Variant {id: r.id, title: r.title, price: r.price})
-SET v.cost = r.cost`;
+SET v.cost = r.cost, v.image = r.image`;
 export const CREATE_DISCOUNTS = `UNWIND $rows AS r
 CREATE (d:Discount {id: r.id, title: r.title, class: r.class, method: r.method, bps: r.bps, off: r.off,
   all_variants: r.allVariants, min_subtotal: r.minSubtotal, supported: r.supported})
@@ -51,7 +51,7 @@ CREATE (a)-[:COMBINES_WITH {
 }]->(b)`;
 
 export const VARIANTS = `MATCH (v:Variant)
-RETURN v.id AS id, v.title AS title, v.price AS price, v.cost AS cost
+RETURN v.id AS id, v.title AS title, v.price AS price, v.cost AS cost, v.image AS image
 ORDER BY id`;
 
 export const DISCOUNTS = `MATCH (d:Discount)

@@ -5,7 +5,7 @@ import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02I
 import DropletIcon from '@hugeicons/core-free-icons/DropletIcon';
 import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { State } from '../../../packages/core/src/types.ts';
 
 /** Every icon goes through here: one library, stroke matched to the weight of the text beside it. */
@@ -31,15 +31,16 @@ export function StateBadge({ state }: { state: State }) {
   );
 }
 
-export function Page({ title, lead, action, back, children }: {
+export function Page({ title, lead, action, back, wide, children }: {
   title: string;
+  wide?: boolean;
   lead?: ReactNode;
   action?: ReactNode;
   back?: { href: string; label: string };
   children?: ReactNode;
 }) {
   return (
-    <div className="page">
+    <div className={wide ? 'page wide' : 'page'}>
       {back && (
         <a className="back" href={back.href}>
           <Icon icon={ArrowLeft01Icon} />
@@ -106,4 +107,19 @@ const plurals = new Intl.PluralRules('en');
 /** One whole sentence per plural form, with {n} as the number. */
 export function plural(n: number, forms: { one: string; other: string }): string {
   return (plurals.select(n) === 'one' ? forms.one : forms.other).replace('{n}', n.toLocaleString('en'));
+}
+
+const TILES = ['tile-a', 'tile-b', 'tile-c', 'tile-d'];
+
+/** The product image when the import has one, otherwise a tile with its initials. */
+export function Thumb({ title, image }: { title: string; image?: string }) {
+  const [broken, setBroken] = useState(false);
+  if (image && !broken) {
+    return <img className="thumb" src={image} alt="" width={40} height={40} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
+  }
+  const words = title.trim().split(/\s+/).filter((w) => /^\p{L}/u.test(w));
+  const initials = (words.length ? words.slice(0, 2).map((w) => [...w][0]).join('') : [...title.trim()][0] ?? '?').toUpperCase();
+  let hash = 0;
+  for (const ch of title) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
+  return <span className={`thumb ${TILES[hash % TILES.length]}`} aria-hidden="true">{initials}</span>;
 }

@@ -245,9 +245,9 @@ try {
   });
 
   await step('more products load on request', async () => {
-    assert.equal(await page.locator('main .rows .row').count(), 25);
+    assert.equal(await page.locator('main tbody tr').count(), 25);
     await page.getByRole('button', { name: /Show 25 more/ }).click();
-    assert.equal(await page.locator('main .rows .row').count(), 50);
+    assert.equal(await page.locator('main tbody tr').count(), 50);
   });
 
   await step('discounts can be added, edited and removed', async () => {
@@ -261,7 +261,7 @@ try {
     await page.getByRole('link', { name: /SPRING5/ }).click();
     await page.getByLabel('Percentage', { exact: true }).fill('7');
     await button('Save changes');
-    await page.getByText('7% off, on all products').waitFor();
+    await page.locator('tbody tr', { hasText: 'SPRING5' }).filter({ hasText: '7% off' }).waitFor();
     await page.getByRole('link', { name: /SPRING5/ }).click();
     await button('Remove from audit');
     await toast('SPRING5 removed');

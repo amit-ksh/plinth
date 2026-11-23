@@ -1,6 +1,6 @@
 import { parseMoney, parsePercent } from './format.ts';
 import type { Discount, DiscountClass, StoreInput, Variant } from './types.ts';
-import { InputError, validate } from './validate.ts';
+import { InputError, isImageUrl, validate } from './validate.ts';
 
 const MAX_LENGTH = 5_000_000;
 
@@ -134,7 +134,9 @@ export function importCsv(files: { products: string; discounts: string }, plus: 
       if (!collections.has(id)) collections.set(id, { id, title });
       member.add(id);
     }
-    variants.push({ id: r.id, title: r.title || r.id, price: price ?? 0, cost, collections: [...member] });
+    const image = (r.image || r['image src'] || '').trim();
+    if (image && !isImageUrl(image)) issues.push(`${at}: use an image link that starts with https://, or leave it empty`);
+    variants.push({ id: r.id, title: r.title || r.id, price: price ?? 0, cost, collections: [...member], ...(image ? { image } : {}) });
   }
   if (!variants.length && !issues.length) issues.push(`${P}: add at least one product`);
 

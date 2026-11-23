@@ -9,6 +9,8 @@ export interface Variant {
   price: number;
   cost: number | null;
   collections: string[];
+  /** Optional https image URL, shown as a thumbnail only. */
+  image?: string;
 }
 
 export interface Discount {

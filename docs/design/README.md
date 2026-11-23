@@ -22,7 +22,8 @@ The palette and window layout began from mood-board references, which are not pa
 | State | Icon and words, never color alone |
 | Type | Inter for the interface, Geist Mono for codes. Tabular numerals for money. Self-hosted |
 | Icons | Hugeicons free, through the `Icon` component, stroke matched to text weight |
-| Layout | 40px controls. The sidebar becomes a menu at 900px. No sideways scroll at 320px |
+| Layout | Fullscreen window. 40px controls. Lists of records are tables; columns drop away on narrow screens. The sidebar becomes a menu at 900px. No sideways scroll at 320px |
+| Images | Product thumbnails come from an optional `image` (or Shopify `Image Src`) CSV column, https only. Without one, a tile shows the initials |
 | Motion | Press scale and background only. No movement under reduced motion |
 | Writing | Sentence case, verb-first buttons, errors say how to fix, undo instead of confirmation |
 | Theme | Light. A dark theme would repoint semantic tokens |

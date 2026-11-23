@@ -122,6 +122,7 @@
   --size-target: 40px;
   --width-hero: 640px;
   --width-page: 760px;
+  --width-wide: 1120px;
 
   /* Elevation */
   --shadow-window: 0 24px 64px -28px rgb(2 37 26 / 0.3);

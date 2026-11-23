@@ -123,7 +123,7 @@ export function Import() {
 
       <div className="section">
         <Disclosure summary="Get the spreadsheet templates">
-          <p>Fill these in and keep the column names. Separate several values in one cell with semicolons.</p>
+          <p>Fill these in and keep the column names. Separate several values in one cell with semicolons. To show product photos, add an <span className="code">image</span> column with https links.</p>
           <div className="actions">
             <button className="btn with-icon" onClick={() => download('products.csv', PRODUCTS_TEMPLATE, 'text/csv')}>
               <Icon icon={Download01Icon} />

@@ -16,7 +16,7 @@ export function loadStore(db: Driver, input: StoreInput): void {
 
   const steps: [string, unknown[]][] = [
     [Q.CREATE_COLLECTIONS, collections],
-    [Q.CREATE_VARIANTS, variants.map(({ id, title, price, cost }) => ({ id, title, price, cost }))],
+    [Q.CREATE_VARIANTS, variants.map(({ id, title, price, cost, image }) => ({ id, title, price, cost, image: image ?? null }))],
     [
       Q.CREATE_DISCOUNTS,
       discounts.map((d) => ({
