@@ -55,3 +55,40 @@ export function writeShopify(kind: 'create' | 'update' | 'delete', discount: Dis
 export function connectShopify(shop: string): void {
   location.assign(`/api/shopify/start?shop=${encodeURIComponent(shop)}`);
 }
+
+export interface ChangeEvent {
+  id: string;
+  topic: string;
+  at: number;
+  label: string;
+  gid: string | null;
+}
+
+export async function shopifyChanges(since: number): Promise<ChangeEvent[] | null> {
+  try {
+    const res = await fetch(`/api/shopify/changes?since=${since}`, { credentials: 'same-origin' });
+    if (!res.ok) return null;
+    return ((await res.json()) as { events: ChangeEvent[] }).events;
+  } catch {
+    return null;
+  }
+}
+
+export async function shopifyAlerts(): Promise<{ slack: string | null } | null> {
+  try {
+    const res = await fetch('/api/shopify/alerts', { credentials: 'same-origin' });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+export const saveShopifyAlerts = (slack: string | null) => post<{ slack: string | null }>('alerts', { slack });
+export const addShopifyCodes = (gid: string, codes: string[]) => post<{ queued: number }>('codes', { gid, codes });
+
+// Plinth's own writes come back as webhooks too; they are already reflected here, so the watcher skips them.
+const ownWrites = new Map<string, number>();
+export const noteOwnWrite = (gid: string | null | undefined) => {
+  if (gid) ownWrites.set(gid, Date.now());
+};
+export const isOwnWrite = (e: ChangeEvent) => !!e.gid && (ownWrites.get(e.gid) ?? 0) > e.at - 120_000;

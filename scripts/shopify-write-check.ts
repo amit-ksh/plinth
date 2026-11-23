@@ -6,7 +6,7 @@
 // Use a development store. The app needs write_discounts, read_products and read_inventory.
 import assert from 'node:assert/strict';
 import { fromShopify, pullShopify, SHOPIFY_API_VERSION } from '../packages/core/src/shopify.ts';
-import { acceptsTagsOf, discountMutation, writeDiscount, type WriteKind } from '../packages/core/src/shopify-write.ts';
+import { acceptsTagsOf, addRedeemCodes, discountMutation, generateCodes, writeDiscount, type WriteKind } from '../packages/core/src/shopify-write.ts';
 import type { Discount } from '../packages/core/src/types.ts';
 
 const shopName = (process.env.SHOPIFY_STORE ?? '').replace(/\.myshopify\.com$/, '');
@@ -100,3 +100,22 @@ expectRead(c, 'changes free shipping into an order discount by recreating it');
 for (const d of [a, b, c]) await write('delete', d, d);
 assert.ok(!current.store.discounts.some((d) => d.id.startsWith('PLINTHCHECK') || d.title === 'Plinth check order'), 'test discounts deleted');
 console.log('ok   deletes every test discount');
+
+// Bulk codes: added to a real code discount, then read back.
+{
+  let d: Discount = { ...base, id: 'PLINTHCHECK4', title: 'PLINTHCHECK4', class: 'order', bps: 500, allVariants: true, combinesWith: [] };
+  await write('create', d, null);
+  const gid = link().discounts[d.id];
+  const codes = generateCodes('PLINTHCHECK4', 30);
+  assert.equal(new Set(codes).size, 30);
+  assert.equal(await addRedeemCodes(request, gid, codes), 30);
+  let count = 0;
+  for (let i = 0; i < 20 && count < 31; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const body = await request(`query($id: ID!) { codeDiscountNode(id: $id) { codeDiscount { ... on DiscountCodeBasic { codesCount { count } } } } }`, { id: gid });
+    count = body.data.codeDiscountNode.codeDiscount.codesCount.count;
+  }
+  assert.equal(count, 31, 'the original code plus 30 new ones');
+  console.log('ok   adds 30 unique codes to a code discount');
+  await write('delete', d, d);
+}

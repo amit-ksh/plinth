@@ -325,6 +325,10 @@ input[type="file"]::file-selector-button { min-height: 32px; margin-inline-end: 
 .inside details > summary { display: list-item; min-height: var(--size-target); padding-block: 10px; }
 pre { margin: 0; padding: var(--space-3); border-radius: var(--radius-control); background: var(--color-bg-sunken); font: 400 var(--text-label)/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 
+.banner.changes { background: var(--color-accent-subtle); color: var(--color-text-primary); box-shadow: inset 0 0 0 1px var(--color-accent-border); }
+.banner .buttons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.kill { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.kill p { flex: 1 1 320px; }
 .banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-block-end: var(--space-4); padding: 10px var(--space-4); border-radius: var(--radius-card); background: var(--color-warning-subtle); color: var(--color-warning-text); }
 .toast-slot { position: sticky; inset-block-end: 0; z-index: 4; display: grid; justify-items: center; pointer-events: none; }
 .toast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3); max-width: calc(100% - 32px); margin-block-end: var(--space-4); padding: 6px 6px 6px var(--space-4); border: 1px solid transparent; border-radius: calc(var(--size-target) / 2 + 6px); background: var(--color-bg-raised); box-shadow: var(--shadow-border); pointer-events: auto; }

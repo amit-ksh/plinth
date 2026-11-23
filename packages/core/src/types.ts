@@ -44,6 +44,8 @@ export interface Scenario {
   shippingCost: number;
   maxQty: number;
   floorBps?: number;
+  /** Per-variant margin floors in basis points. A variant listed here uses its own floor instead of floorBps. */
+  floors?: Record<string, number>;
   /** Discounts that ended at or before this instant are left out. */
   asOf?: number;
   removed?: string[];
@@ -70,6 +72,10 @@ export interface VariantAudit {
   leaks: Outcome[];
   /** With `focus`, the worst leak containing that discount. */
   focus: Outcome | null;
+  /** With `focus`, the lowest-margin outcome containing that discount, leak or not. */
+  focusWorst?: Outcome | null;
+  /** The margin floor this variant was checked against, in basis points. */
+  floorBps?: number;
   unknown: UnknownReason[];
 }
 

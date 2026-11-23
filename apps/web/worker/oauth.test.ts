@@ -43,3 +43,19 @@ test('sessions are sealed, tamper-proof and expire', async () => {
   assert.equal(await openSession(sealed, 'k1', session.expires + 1), null);
   assert.equal(await openSession('garbage', 'k1'), null);
 });
+
+test('webhooks are verified, summarized without costs, and Slack URLs are restricted', async () => {
+  const { validWebhook, describeWebhook, isSlackUrl } = await import('./oauth.ts');
+  const body = new TextEncoder().encode('{"title":"BUNDLE20"}');
+  const signature = createHmac('sha256', 's3').update(body).digest('base64');
+  assert.equal(await validWebhook(body.buffer, signature, 's3'), true);
+  assert.equal(await validWebhook(body.buffer, signature, 'other'), false);
+  assert.equal(await validWebhook(body.buffer, null, 's3'), false);
+  const e = describeWebhook('discounts/update', { title: 'BUNDLE20', admin_graphql_api_id: 'gid://shopify/DiscountCodeNode/1' }, 'w1', 5);
+  assert.deepEqual(e, { id: 'w1', topic: 'discounts/update', at: 5, label: 'Discount changed: BUNDLE20', gid: 'gid://shopify/DiscountCodeNode/1' });
+  const cost = describeWebhook('inventory_items/update', { sku: 'JKT-1', cost: '65.00' }, 'w2', 6)!;
+  assert.ok(!cost.label.includes('65'), 'no cost in the log');
+  assert.equal(describeWebhook('orders/create', {}, 'w3', 7), null);
+  assert.equal(isSlackUrl('https://hooks.slack.com/services/T0/B0/xyz'), true);
+  for (const bad of ['http://hooks.slack.com/services/x', 'https://evil.com/services/x', 'https://hooks.slack.com.evil.com/services/x', 42]) assert.equal(isSlackUrl(bad), false);
+});

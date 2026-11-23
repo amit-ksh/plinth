@@ -19,7 +19,7 @@ export interface ChecklistItem {
   done: boolean;
 }
 
-export type HistoryAction = 'create' | 'update' | 'end' | 'reactivate' | 'delete' | 'fix' | 'rollback';
+export type HistoryAction = 'create' | 'update' | 'end' | 'reactivate' | 'delete' | 'fix' | 'rollback' | 'pause';
 
 /** One change to one discount, with the full discount before and after, so it can be rolled back. */
 export interface HistoryEntry {
@@ -32,6 +32,16 @@ export interface HistoryEntry {
   /** Whether the change was written to Shopify or only to this audit. */
   where: 'shopify' | 'local';
   rolledBack: boolean;
+  /** Changes made together, like pausing every discount, share a batch and roll back together. */
+  batch?: string;
+}
+
+/** Margin floors that every discount change is checked against. The store-wide floor is settings.floorBps. */
+export interface Guardrails {
+  /** Collection ID to floor in basis points. A product uses the highest floor of its collections instead of the store's. */
+  collections: Record<string, number>;
+  /** Warn shows the breach and allows saving anyway. Block refuses the save. */
+  mode: 'warn' | 'block';
 }
 
 /** Shopify IDs for what was imported, so changes can be written back. Keys are Plinth IDs. */
@@ -48,6 +58,7 @@ export interface AppState {
   sample: boolean;
   history: HistoryEntry[];
   shopify: ShopifyLink | null;
+  guardrails: Guardrails;
 }
 
 export const HISTORY_LIMIT = 200;
@@ -58,9 +69,10 @@ export const defaultState = (sample: boolean): AppState => ({
   sample,
   history: [],
   shopify: null,
+  guardrails: { collections: {}, mode: 'warn' },
 });
 
-const ACTIONS: readonly HistoryAction[] = ['create', 'update', 'end', 'reactivate', 'delete', 'fix', 'rollback'];
+const ACTIONS: readonly HistoryAction[] = ['create', 'update', 'end', 'reactivate', 'delete', 'fix', 'rollback', 'pause'];
 const GID = /^gid:\/\/shopify\/[A-Za-z]+\/\d+$/;
 const SHOP = /^[a-z0-9][a-z0-9-]{0,59}\.myshopify\.com$/;
 
@@ -78,8 +90,20 @@ function checkHistory(value: unknown): HistoryEntry[] {
     const ok = typeof e?.id === 'string' && Number.isSafeInteger(e.at) && ACTIONS.includes(e.action) && typeof e.discount === 'string' &&
       (e.before === null || isDiscount(e.before)) && (e.after === null || isDiscount(e.after)) && (e.where === 'shopify' || e.where === 'local');
     if (!ok) throw new InputError(['This backup has a damaged history']);
-    return { id: e.id, at: e.at, action: e.action, discount: e.discount, before: e.before, after: e.after, where: e.where, rolledBack: e.rolledBack === true };
+    const entry: HistoryEntry = { id: e.id, at: e.at, action: e.action, discount: e.discount, before: e.before, after: e.after, where: e.where, rolledBack: e.rolledBack === true };
+    if (typeof e.batch === 'string' && e.batch.length <= 64) entry.batch = e.batch;
+    return entry;
   });
+}
+
+export function checkGuardrails(value: unknown): Guardrails {
+  if (value === undefined || value === null) return { collections: {}, mode: 'warn' };
+  const g = value as Partial<Guardrails>;
+  const entries = Object.entries(g.collections ?? {});
+  const ok = (g.mode === 'warn' || g.mode === 'block') && g.collections && typeof g.collections === 'object' && !Array.isArray(g.collections) &&
+    entries.length <= 1000 && entries.every(([id, bps]) => typeof id === 'string' && id.length <= 128 && Number.isSafeInteger(bps) && (bps as number) >= 0 && (bps as number) < 10000);
+  if (!ok) throw new InputError(['Enter each collection’s minimum margin as a percentage below 100']);
+  return { collections: Object.fromEntries(entries) as Record<string, number>, mode: g.mode! };
 }
 
 function checkLink(value: unknown): ShopifyLink | null {
@@ -143,5 +167,6 @@ export function checkState(value: unknown): AppState {
     sample: state.sample === true,
     history: checkHistory(state.history),
     shopify: checkLink(state.shopify),
+    guardrails: checkGuardrails(state.guardrails),
   };
 }

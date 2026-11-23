@@ -5,7 +5,7 @@ import type { Snapshot } from '../../../packages/core/src/workspace.ts';
 export interface AppContext {
   data: Snapshot;
   /** Runs a change, shows its result and offers undo. Returns false when it failed. */
-  change: (work: () => Promise<Snapshot>, done: string) => Promise<boolean>;
+  change: (work: () => Promise<Snapshot>, done: string | (() => string)) => Promise<boolean>;
   notify: (message: string) => void;
   query: string;
   setQuery: (query: string) => void;

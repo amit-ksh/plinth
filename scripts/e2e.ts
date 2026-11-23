@@ -79,7 +79,7 @@ const button = (name: string) => page.getByRole('button', { name, exact: true })
 const shot = async (name: string) => {
   if (shots) await page.screenshot({ path: join(shots, `flow-${name}.png`) });
 };
-const toast = (text: string) => page.locator('.toast', { hasText: text }).waitFor();
+const toast = (text: string | RegExp) => page.locator('.toast', { hasText: text }).waitFor();
 const focused = () => page.evaluate(() => document.activeElement?.id ?? '');
 
 async function checkPromotion(text: string): Promise<void> {
@@ -328,6 +328,62 @@ try {
     await go('discounts');
     assert.equal(await page.locator('tbody tr', { hasText: 'BFCM40' }).count(), 0);
     await page.locator('tbody tr', { hasText: 'CLEAR40' }).waitFor();
+  });
+
+  await step('a collection guardrail warns, then blocks, a change that eats the margin', async () => {
+    await go('settings');
+    await page.getByLabel('Collection', { exact: true }).selectOption({ label: 'Knitwear' });
+    await page.getByLabel('Minimum margin', { exact: true }).fill('45');
+    await button('Add minimum margin');
+    await toast('Knitwear minimum margin saved');
+    await go('discounts/KNIT10');
+    await page.getByLabel('Percentage', { exact: true }).fill('50');
+    await button('Save changes');
+    await heading(/below (its|their) minimum margin/);
+    await page.getByText(/margin, minimum 45%/).first().waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Save anyway', exact: true }).count(), 1);
+    await shot('guardrail');
+    await go('settings');
+    await page.getByLabel('Block the save').click();
+    await toast('now blocked');
+    await go('discounts');
+    await go('discounts/KNIT10');
+    await page.getByLabel('Percentage', { exact: true }).fill('50');
+    await button('Save changes');
+    await page.getByText('Your guardrails block this change').waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Save anyway', exact: true }).count(), 0);
+    await go('settings');
+    await page.getByLabel('Warn, and allow saving anyway').click();
+    await toast('now warn');
+    await page.getByRole('button', { name: 'Remove', exact: true }).click();
+    await toast('Knitwear minimum margin removed');
+  });
+
+  await step('pause all ends every live discount, and resume all brings them back', async () => {
+    await go('discounts');
+    await button('Pause all discounts');
+    await button('Pause all');
+    await toast(/Paused \d+ live discounts/);
+    await page.getByText(/discounts paused/).waitFor();
+    await go('home');
+    await heading('No leak found in this audit');
+    await go('discounts');
+    await shot('paused');
+    await button('Resume all');
+    await toast(/Resumed \d+/);
+    await go('home');
+    await heading('2 products sell below cost');
+  });
+
+  await step('unique codes download for a code discount', async () => {
+    await go('discounts/WELCOME15');
+    await page.getByText('Generate unique codes').click();
+    await page.getByLabel('How many').fill('25');
+    const text = await downloadText(() => button('Download codes'));
+    const codes = text.trim().split(/\r?\n/).slice(1);
+    assert.equal(codes.length, 25);
+    assert.equal(new Set(codes).size, 25);
+    assert.ok(codes.every((c) => /^WELCOME15-[A-HJ-NP-Z2-9]{8}$/.test(c)), codes[0]);
   });
 
   await step('settings validate and re-run the audit', async () => {

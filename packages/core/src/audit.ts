@@ -33,6 +33,9 @@ function checkScenario(s: Scenario): void {
   if (s.floorBps !== undefined && (!Number.isSafeInteger(s.floorBps) || s.floorBps < 0 || s.floorBps >= 10000)) {
     throw new RangeError('floorBps must be a whole number from 0 to 9999');
   }
+  for (const bps of Object.values(s.floors ?? {})) {
+    if (!Number.isSafeInteger(bps) || bps < 0 || bps >= 10000) throw new RangeError('floors must be whole numbers from 0 to 9999');
+  }
 }
 
 function findGroups(db: Driver, profiles: Profile[], byId: Map<string, DiscountRow>, removed: string[]): void {
@@ -78,7 +81,7 @@ function findGroups(db: Driver, profiles: Profile[], byId: Map<string, DiscountR
 
 export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: boolean; focus?: string } = {}): AuditResult {
   checkScenario(scenario);
-  const { shippingCost, maxQty, floorBps = 0, asOf = null, removed = [], disabled = [] } = scenario;
+  const { shippingCost, maxQty, floorBps = 0, floors = {}, asOf = null, removed = [], disabled = [] } = scenario;
 
   const variants = db.query<Omit<Variant, 'collections'>>(Q.VARIANTS);
   const discounts = db.query<DiscountRow>(Q.DISCOUNTS, { disabled, as_of: asOf });
@@ -145,7 +148,10 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
       leaks: [],
       focus: null,
       unknown,
+      ...(options.focus ? { focusWorst: null } : {}),
+      ...(variant.id in floors ? { floorBps: floors[variant.id] } : {}),
     };
+    const floor = floors[variant.id] ?? floorBps;
     let thin = false;
 
     if (cost !== null) {
@@ -157,6 +163,10 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
         if (!worst || margin * worst.qty < (worst.net - worst.cost) * qty) {
           row.worst = { qty, stack: [...stack], net, cost: total };
         }
+        if (options.focus && stack.includes(options.focus)) {
+          const w = row.focusWorst;
+          if (!w || margin * w.qty < (w.net - w.cost) * qty) row.focusWorst = { qty, stack: [...stack], net, cost: total };
+        }
         if (margin < 0) {
           row.leakCount++;
           if (options.collectLeaks) row.leaks.push({ qty, stack: [...stack], net, cost: total });
@@ -166,7 +176,7 @@ export function audit(db: Driver, scenario: Scenario, options: { collectLeaks?: 
               row.focus = { qty, stack: [...stack], net, cost: total };
             }
           }
-        } else if (floorBps > 0 && margin * 10000 < floorBps * net) {
+        } else if (floor > 0 && margin * 10000 < floor * net) {
           thin = true;
         }
       };

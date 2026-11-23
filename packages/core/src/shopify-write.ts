@@ -176,3 +176,40 @@ export async function writeDiscount(
   for (const m of discountMutations(kind, d, opts)) gid = (await run(request, m)) ?? (kind === 'delete' ? null : gid);
   return kind === 'delete' ? null : gid;
 }
+
+/** Unambiguous characters for printed codes: no 0/O, 1/I/L. */
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const MAX_BULK_CODES = 1000;
+
+/** Unique random codes like PREFIX-7KQ2M9XA, from a cryptographic source. */
+export function generateCodes(prefix: string, count: number, length = 8): string[] {
+  const clean = prefix.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 40);
+  if (!Number.isSafeInteger(count) || count < 1 || count > MAX_BULK_CODES) throw new InputError([`Choose from 1 to ${MAX_BULK_CODES} codes`]);
+  if (!Number.isSafeInteger(length) || length < 6 || length > 16) throw new InputError(['Choose a code length from 6 to 16']);
+  const codes = new Set<string>();
+  while (codes.size < count) {
+    const bytes = crypto.getRandomValues(new Uint8Array(length));
+    // 248 is the largest multiple of 31 below 256, so every character is equally likely.
+    if (bytes.some((b) => b >= 248)) continue;
+    const body = [...bytes].map((b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+    codes.add(clean ? `${clean}-${body}` : body);
+  }
+  return [...codes];
+}
+
+/** Adds codes to an existing code discount in Shopify, 250 per request (Shopify's limit). Returns how many were queued. */
+export async function addRedeemCodes(request: GraphqlRequest, gid: string, codes: string[]): Promise<number> {
+  if (!gid.includes('/DiscountCodeNode/')) throw new InputError(['Only code discounts can have extra codes']);
+  let queued = 0;
+  for (let i = 0; i < codes.length; i += 250) {
+    const chunk = codes.slice(i, i + 250);
+    await run(request, {
+      query: `mutation($id: ID!, $codes: [DiscountRedeemCodeInput!]!) { discountRedeemCodeBulkAdd(discountId: $id, codes: $codes) { bulkCreation { id } userErrors { field message } } }`,
+      variables: { id: gid, codes: chunk.map((code) => ({ code })) },
+      field: 'discountRedeemCodeBulkAdd',
+      node: null,
+    });
+    queued += chunk.length;
+  }
+  return queued;
+}

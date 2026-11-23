@@ -12,6 +12,8 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  // Change log from Shopify webhooks and Slack alert settings, per store. No product costs.
+  "kv_namespaces": [{ "binding": "PLINTH_KV", "id": "167bbd5c038d4b15822440e152d96000" }],
   "vars": {
     // Public: Shopify shows it in every install link.
     "SHOPIFY_API_KEY": "0c8a016afa272e5125eb501c840bb124"

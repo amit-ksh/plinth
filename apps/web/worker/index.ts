@@ -6,18 +6,33 @@
 // GET  /api/shopify/session     whether this browser is connected, and to which store.
 // POST /api/shopify/pull        reads the store again.
 // POST /api/shopify/discount    writes one discount change (create, update or delete).
+// POST /api/shopify/codes       adds generated codes to a code discount.
 // POST /api/shopify/disconnect  forgets the session.
+// POST /api/shopify/webhooks    Shopify's change notifications, verified by signature.
+// GET  /api/shopify/changes     the store's recent changes, for this browser's session.
+// GET/POST /api/shopify/alerts  the store's Slack alert URL.
 //
-// Nothing is stored on the server. The token lives in an encrypted HttpOnly cookie that expires with it.
+// The token lives only in an encrypted HttpOnly cookie that expires with it. KV keeps, per store, the last
+// 100 change notices (names only, never costs) and the Slack URL.
 import type { ShopifyLink } from '../../../packages/core/src/app-state.ts';
 import { fromShopify, pullShopify, SHOPIFY_API_VERSION, SHOPIFY_SCOPES, type ShopifyRequest } from '../../../packages/core/src/shopify.ts';
-import { writeDiscount, type WriteKind } from '../../../packages/core/src/shopify-write.ts';
+import { addRedeemCodes, MAX_BULK_CODES, writeDiscount, type WriteKind } from '../../../packages/core/src/shopify-write.ts';
 import type { Discount } from '../../../packages/core/src/types.ts';
 import { InputError } from '../../../packages/core/src/validate.ts';
-import { normalizeShop, openSession, randomState, readCookie, scriptJson, sealSession, validHmac, type Session } from './oauth.ts';
+import {
+  describeWebhook, isSlackUrl, normalizeShop, openSession, randomState, readCookie, scriptJson, sealSession, validHmac, validWebhook,
+  type ChangeEvent, type Session,
+} from './oauth.ts';
+
+interface KV {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
+  PLINTH_KV?: KV;
   SHOPIFY_API_KEY: string;
   SHOPIFY_API_SECRET: string;
 }
@@ -157,10 +172,90 @@ async function discount(request: Request, session: Session): Promise<Response> {
   }
 }
 
+const EVENTS = 100;
+const eventsKey = (shop: string) => `events:${shop}`;
+const alertsKey = (shop: string) => `alerts:${shop}`;
+const CODE_NODE = /^gid:\/\/shopify\/DiscountCodeNode\/\d+$/;
+
+async function readEvents(env: Env, shop: string): Promise<ChangeEvent[]> {
+  const raw = await env.PLINTH_KV?.get(eventsKey(shop));
+  try {
+    return raw ? (JSON.parse(raw) as ChangeEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Shopify calls this for each change. Verified by signature; answers fast, as Shopify retries slow replies. */
+async function webhook(request: Request, env: Env, ctx: { waitUntil(p: Promise<unknown>): void } | undefined): Promise<Response> {
+  const body = await request.arrayBuffer();
+  if (!(await validWebhook(body, request.headers.get('X-Shopify-Hmac-Sha256'), env.SHOPIFY_API_SECRET))) return new Response('Unauthorized', { status: 401 });
+  const topic = request.headers.get('X-Shopify-Topic') ?? '';
+  const shop = normalizeShop(request.headers.get('X-Shopify-Shop-Domain'));
+  if (!shop || !env.PLINTH_KV) return new Response('OK');
+  if (topic === 'shop/redact') {
+    await env.PLINTH_KV.delete(eventsKey(shop));
+    await env.PLINTH_KV.delete(alertsKey(shop));
+    return new Response('OK');
+  }
+  let payload: unknown = null;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return new Response('OK');
+  }
+  const at = Date.parse(request.headers.get('X-Shopify-Triggered-At') ?? '') || Date.now();
+  const event = describeWebhook(topic, payload, request.headers.get('X-Shopify-Webhook-Id') ?? `${topic}-${at}`, at);
+  if (!event) return new Response('OK');
+  const kv = env.PLINTH_KV;
+  const work = (async () => {
+    const events = await readEvents(env, shop);
+    if (events.some((e) => e.id === event.id)) return; // Shopify can deliver a webhook twice.
+    await kv.put(eventsKey(shop), JSON.stringify([...events, event].slice(-EVENTS)));
+    const slack = await kv.get(alertsKey(shop));
+    if (isSlackUrl(slack) && event.topic !== 'products/update') {
+      await fetch(slack, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: `Plinth: ${event.label} in ${shop}. Open Plinth to check it for leaks: ${new URL(request.url).origin}/` }),
+      }).catch(() => null);
+    }
+  })();
+  if (ctx) ctx.waitUntil(work);
+  else await work;
+  return new Response('OK');
+}
+
+async function codes(request: Request, session: Session): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { gid?: unknown; codes?: unknown } | null;
+  const list = body?.codes;
+  if (typeof body?.gid !== 'string' || !CODE_NODE.test(body.gid)) return problem(400, ['Only code discounts can have extra codes']);
+  if (!Array.isArray(list) || !list.length || list.length > MAX_BULK_CODES || !list.every((c) => typeof c === 'string' && /^[A-Z0-9_-]{1,64}$/.test(c))) {
+    return problem(400, [`Send from 1 to ${MAX_BULK_CODES} codes of letters, numbers, - and _`]);
+  }
+  try {
+    return json({ queued: await addRedeemCodes(shopifyRequest(session), body.gid, list as string[]) });
+  } catch (error) {
+    if (error instanceof InputError) return problem(422, error.issues);
+    return problem(502, ['Shopify didn’t answer. Some codes may have been added; check the discount in Shopify']);
+  }
+}
+
 async function api(request: Request, url: URL, env: Env): Promise<Response> {
   const session = await openSession(readCookie(request.headers.get('Cookie'), SESSION_COOKIE), env.SHOPIFY_API_SECRET);
   if (request.method === 'GET' && url.pathname === '/api/shopify/session') {
-    return json(session ? { connected: true, shop: session.shop, expires: session.expires } : { connected: false });
+    return json(session ? { connected: true, shop: session.shop, expires: session.expires, watching: !!env.PLINTH_KV } : { connected: false });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/shopify/changes') {
+    if (!session) return problem(401, ['Your Shopify session ended. Connect again from Import']);
+    const since = Number(url.searchParams.get('since')) || 0;
+    return json({ events: (await readEvents(env, session.shop)).filter((e) => e.at > since) });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/shopify/alerts') {
+    if (!session) return problem(401, ['Your Shopify session ended. Connect again from Import']);
+    const slack = await env.PLINTH_KV?.get(alertsKey(session.shop));
+    // Only the start is shown back, since the URL itself is a credential.
+    return json({ slack: isSlackUrl(slack) ? `${slack.slice(0, 40)}…` : null });
   }
   if (request.method !== 'POST') return problem(405, ['Not allowed']);
   if (!sameSite(request, url)) return problem(403, ['Not allowed']);
@@ -175,12 +270,30 @@ async function api(request: Request, url: URL, env: Env): Promise<Response> {
     }
   }
   if (url.pathname === '/api/shopify/discount') return discount(request, session);
+  if (url.pathname === '/api/shopify/codes') return codes(request, session);
+  if (url.pathname === '/api/shopify/alerts') {
+    const body = (await request.json().catch(() => null)) as { slack?: unknown } | null;
+    if (!env.PLINTH_KV) return problem(503, ['Alerts aren’t set up on this server']);
+    if (body?.slack === null) {
+      await env.PLINTH_KV.delete(alertsKey(session.shop));
+      return json({ slack: null });
+    }
+    if (!isSlackUrl(body?.slack)) return problem(400, ['Paste a Slack incoming webhook URL, starting https://hooks.slack.com/services/']);
+    await env.PLINTH_KV.put(alertsKey(session.shop), body.slack);
+    await fetch(body.slack, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: `Plinth will post here when discounts or costs change in ${session.shop}.` }),
+    }).catch(() => null);
+    return json({ slack: `${body.slack.slice(0, 40)}…` });
+  }
   return problem(404, ['Not found']);
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
     const url = new URL(request.url);
+    if (request.method === 'POST' && url.pathname === '/api/shopify/webhooks') return webhook(request, env, ctx);
     if (request.method === 'GET' && url.pathname === '/api/shopify/start') return start(url, env);
     if (request.method === 'GET' && url.pathname === '/api/shopify/callback') return callback(request, url, env);
     if (url.pathname.startsWith('/api/shopify/')) return api(request, url, env);

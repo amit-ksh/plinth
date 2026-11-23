@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { CURRENCIES, parseMoney, parsePercent, type Currency } from '../../../../packages/core/src/format.ts';
 import { editable, useApp } from '../context.ts';
 import { call } from '../engine.ts';
-import { connectShopify, disconnectShopify, pullShopify, SHOPIFY_CONNECT, shopifySession } from '../shopify.ts';
+import { connectShopify, disconnectShopify, pullShopify, saveShopifyAlerts, SHOPIFY_CONNECT, shopifyAlerts, shopifySession } from '../shopify.ts';
+import { explainError } from '../engine.ts';
 import { Page } from '../ui.tsx';
 
 function SettingsForm() {
@@ -39,7 +40,7 @@ function SettingsForm() {
   const fields = [
     { key: 'shipping', label: 'What free shipping costs you', hint: 'Your average cost per order', value: shipping, set: setShipping, placeholder: '8.00' },
     { key: 'quantity', label: 'Check quantities up to', hint: 'Items of one product in a cart', value: quantity, set: setQuantity, placeholder: '3' },
-    { key: 'margin', label: 'Warn below this margin (optional)', hint: 'Shows as Thin margin', value: margin, set: setMargin, placeholder: '15%' },
+    { key: 'margin', label: 'Minimum margin for every product (optional)', hint: 'Below it shows as Thin, and the guardrails check it', value: margin, set: setMargin, placeholder: '15%' },
   ];
 
   return (
@@ -74,6 +75,156 @@ function SettingsForm() {
       </label>
       <div className="actions">
         <button className="btn primary" type="submit">Save settings</button>
+      </div>
+    </form>
+  );
+}
+
+function GuardrailsSection() {
+  const { data, change } = useApp();
+  const uid = useId();
+  const { guardrails } = data.app;
+  const names = new Map(data.store.collections.map((c) => [c.id, c.title]));
+  const unused = data.store.collections.filter((c) => !(c.id in guardrails.collections));
+  const [collection, setCollection] = useState(unused[0]?.id ?? '');
+  const [percent, setPercent] = useState('');
+  const [error, setError] = useState('');
+
+  const save = (next: typeof guardrails, done: string) => change(() => call('saveGuardrails', next), done);
+  const add = async (event: FormEvent) => {
+    event.preventDefault();
+    const bps = parsePercent(percent);
+    if (bps === null || bps >= 10000) {
+      setError('Enter a percentage below 100, like 25');
+      document.getElementById(`${uid}-percent`)?.focus();
+      return;
+    }
+    setError('');
+    const chosen = collection || unused[0]?.id;
+    if (!chosen) return;
+    if (await save({ ...guardrails, collections: { ...guardrails.collections, [chosen]: bps } }, `${names.get(chosen)} minimum margin saved`)) setPercent('');
+  };
+
+  return (
+    <section className="section" aria-labelledby="guardrails">
+      <h2 id="guardrails">Guardrails</h2>
+      <p className="muted">Every discount change is checked against your minimum margins. A collection’s minimum replaces the store’s for its products.</p>
+      <fieldset className="field">
+        <legend>When a change breaks a guardrail</legend>
+        <div className="checks">
+          {(['warn', 'block'] as const).map((mode) => (
+            <label className="check" key={mode}>
+              <input
+                type="radio"
+                name="guard-mode"
+                checked={guardrails.mode === mode}
+                onChange={() => save({ ...guardrails, mode }, mode === 'block' ? 'Changes that break a guardrail are now blocked' : 'Changes that break a guardrail now warn')}
+              />
+              {mode === 'warn' ? 'Warn, and allow saving anyway' : 'Block the save'}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {Object.keys(guardrails.collections).length > 0 && (
+        <ul className="rows">
+          {Object.entries(guardrails.collections).map(([id, bps]) => (
+            <li className="row" key={id}>
+              <span className="body">
+                <strong>{names.get(id) ?? id}</strong>
+                <span className="caption muted">Minimum margin {bps / 100}%</span>
+              </span>
+              <span className="end">
+                <button
+                  className="btn"
+                  onClick={() => {
+                    const { [id]: _removed, ...rest } = guardrails.collections;
+                    save({ ...guardrails, collections: rest }, `${names.get(id) ?? id} minimum margin removed`);
+                  }}
+                >
+                  Remove
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {unused.length > 0 && (
+        <form className="form" onSubmit={add} noValidate>
+          <div className="fields">
+            <div className="field">
+              <label htmlFor={`${uid}-collection`}>Collection</label>
+              <select id={`${uid}-collection`} value={collection || unused[0].id} onChange={(e) => setCollection(e.target.value)}>
+                {unused.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor={`${uid}-percent`}>Minimum margin</label>
+              <input id={`${uid}-percent`} inputMode="decimal" placeholder="25%" value={percent} onChange={(e) => setPercent(e.target.value)} aria-invalid={!!error || undefined} aria-describedby={error ? `${uid}-error` : undefined} />
+            </div>
+          </div>
+          {error && <p className="error" id={`${uid}-error`}>{error}</p>}
+          <div className="actions"><button className="btn" type="submit">Add minimum margin</button></div>
+        </form>
+      )}
+    </section>
+  );
+}
+
+function AlertsSection({ live }: { live: boolean }) {
+  const { notify } = useApp();
+  const uid = useId();
+  const [current, setCurrent] = useState<string | null | undefined>(undefined);
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (live) shopifyAlerts().then((a) => setCurrent(a?.slack ?? null));
+  }, [live]);
+  if (!live) return null;
+
+  return (
+    <form
+      className="form"
+      noValidate
+      onSubmit={async (event) => {
+        event.preventDefault();
+        try {
+          const saved = await saveShopifyAlerts(url.trim());
+          setCurrent(saved.slack);
+          setUrl('');
+          setError('');
+          notify('Slack alerts are on. A test message was posted');
+        } catch (e) {
+          setError(explainError(e).join('. '));
+          document.getElementById(`${uid}-slack`)?.focus();
+        }
+      }}
+    >
+      <h3>Alerts</h3>
+      <p className="muted">
+        When a discount, product or cost changes in Shopify, Plinth shows it here and offers to re-check for leaks.
+        {current ? ' It also posts to your Slack channel.' : ' It can also post to a Slack channel.'}
+      </p>
+      {current && <p className="caption">Posting to <span className="code">{current}</span></p>}
+      <div className="field">
+        <label htmlFor={`${uid}-slack`}>{current ? 'Replace the Slack webhook URL' : 'Slack incoming webhook URL (optional)'}</label>
+        <input id={`${uid}-slack`} type="url" autoComplete="off" spellCheck={false} placeholder="https://hooks.slack.com/services/…" value={url} onChange={(e) => setUrl(e.target.value)} aria-invalid={!!error || undefined} aria-describedby={error ? `${uid}-error` : undefined} />
+        {error && <p className="error" id={`${uid}-error`}>{error}</p>}
+      </div>
+      <div className="actions">
+        <button className="btn" type="submit">{current ? 'Replace' : 'Turn on Slack alerts'}</button>
+        {current && (
+          <button
+            className="btn"
+            type="button"
+            onClick={async () => {
+              await saveShopifyAlerts(null).catch(() => null);
+              setCurrent(null);
+              notify('Slack alerts are off');
+            }}
+          >
+            Turn off
+          </button>
+        )}
       </div>
     </form>
   );
@@ -125,6 +276,7 @@ function ShopifyLinkSection() {
           <button className="btn" onClick={() => connectShopify(link.shop.replace(/\.myshopify\.com$/, ''))}>Connect again</button>
         )}
       </div>
+      <AlertsSection live={!!live} />
     </section>
   );
 }
@@ -135,6 +287,7 @@ export function Settings() {
     <Page title="Settings" lead="These change how the audit does its math.">
       {/* Undo, import and reset change the saved values, so the form restarts from them. */}
       <SettingsForm key={JSON.stringify([data.app.settings, data.store.plus])} />
+      <GuardrailsSection />
       <ShopifyLinkSection />
       <section className="section" aria-labelledby="sample">
         <h2 id="sample">Sample data</h2>

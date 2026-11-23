@@ -1,6 +1,7 @@
 import { audit, explainStack } from './audit.ts';
 import {
-  checkSettings, checkState, defaultState, HISTORY_LIMIT, type AppState, type HistoryAction, type HistoryEntry, type Settings, type ShopifyLink,
+  checkGuardrails, checkSettings, checkState, defaultState, HISTORY_LIMIT, type AppState, type Guardrails, type HistoryAction, type HistoryEntry, type Settings,
+  type ShopifyLink,
 } from './app-state.ts';
 import { importCsv } from './csv.ts';
 import { applyChanges, changeId, suggestFixes, type Change, type Fix } from './fixes.ts';
@@ -56,6 +57,10 @@ export interface PromotionCheck {
   leaks: { id: string; title: string; outcome: Outcome }[];
   newlyUnknown: { id: string; title: string; reasons: UnknownReason[] }[];
   checked: number;
+  /** Products this discount would take below their guardrail margin, without going below cost. */
+  belowFloor: { id: string; title: string; outcome: Outcome; floorBps: number }[];
+  /** Set when the guardrails are in Block mode and this change breaks them. */
+  blocked: boolean;
 }
 
 /** How a change was saved: written to Shopify first (with the discount's Shopify ID after), or only here. */
@@ -89,6 +94,18 @@ export interface RollbackPlan {
 }
 
 const CALENDAR_SETS = 40;
+
+/** Per-variant floors: a product in a collection with a floor uses the highest such floor instead of the store's. */
+export function floorsFor(store: StoreInput | undefined, guardrails: Guardrails): Record<string, number> {
+  const byCollection = guardrails.collections;
+  if (!store || !Object.keys(byCollection).length) return {};
+  const floors: Record<string, number> = {};
+  for (const v of store.variants) {
+    const own = v.collections.filter((c) => c in byCollection).map((c) => byCollection[c]);
+    if (own.length) floors[v.id] = Math.max(...own);
+  }
+  return floors;
+}
 const BACKUP_FORMAT = 'discount-audit';
 
 export class Workspace {
@@ -117,9 +134,9 @@ export class Workspace {
     return this.persistence.active()!;
   }
 
-  private scenario(settings: Settings = this.app.settings): Scenario {
+  private scenario(settings: Settings = this.app.settings, guardrails: Guardrails = this.app.guardrails, store: StoreInput | undefined = this.store): Scenario {
     const { shippingCost, maxQty, floorBps } = settings;
-    return { shippingCost, maxQty, floorBps, asOf: this.asOf };
+    return { shippingCost, maxQty, floorBps, floors: floorsFor(store, guardrails), asOf: this.asOf };
   }
 
   private refresh(): void {
@@ -209,18 +226,89 @@ export class Workspace {
     validate(draft);
     const db = this.persistence.scratch();
     loadStore(db, draft);
-    const after = audit(db, this.scenario(), { focus: discount.id });
+    const scenario = this.scenario(this.app.settings, this.app.guardrails, draft);
+    const after = audit(db, scenario, { focus: discount.id });
     const before = new Map(this.result.variants.map((v) => [v.id, v]));
+    const leaks = after.variants
+      .flatMap((v) => (v.focus ? [{ id: v.id, title: v.title, outcome: v.focus }] : []))
+      .sort((a, b) => a.outcome.net - a.outcome.cost - (b.outcome.net - b.outcome.cost));
+    const belowFloor = after.variants.flatMap((v) => {
+      const o = v.focusWorst;
+      const floorBps = scenario.floors?.[v.id] ?? scenario.floorBps ?? 0;
+      if (!o || v.focus || floorBps <= 0) return [];
+      const margin = o.net - o.cost;
+      return margin >= 0 && margin * 10000 < floorBps * o.net ? [{ id: v.id, title: v.title, outcome: o, floorBps }] : [];
+    });
 
     return {
       checked: after.variants.length,
-      leaks: after.variants
-        .flatMap((v) => (v.focus ? [{ id: v.id, title: v.title, outcome: v.focus }] : []))
-        .sort((a, b) => a.outcome.net - a.outcome.cost - (b.outcome.net - b.outcome.cost)),
+      leaks,
       newlyUnknown: after.variants
         .filter((v) => v.unknown.some((reason) => !before.get(v.id)?.unknown.includes(reason)))
         .map((v) => ({ id: v.id, title: v.title, reasons: v.unknown })),
+      belowFloor,
+      blocked: this.app.guardrails.mode === 'block' && (leaks.length > 0 || belowFloor.length > 0),
     };
+  }
+
+  /** Margin floors per collection and whether breaking them warns or blocks. */
+  saveGuardrails(guardrails: Guardrails): Snapshot {
+    const checked = checkGuardrails(guardrails);
+    const known = new Set(this.store.collections.map((c) => c.id));
+    const unknown = Object.keys(checked.collections).filter((id) => !known.has(id));
+    if (unknown.length) throw new InputError([`There is no collection ${unknown[0]} in this audit`]);
+    return this.saveApp({ ...this.app, guardrails: checked });
+  }
+
+  /** The live discounts that Pause all would end. */
+  pausePlan(): Discount[] {
+    const now = this.now();
+    return this.store.discounts.filter((d) => d.supported && (d.starts === null || d.starts <= now) && (d.ends === null || d.ends > now));
+  }
+
+  /**
+   * Ends the given live discounts now, as one batch that Resume all rolls back.
+   * When linked to Shopify, pass only the discounts Shopify accepted.
+   */
+  pauseAll(ids: string[], options: SaveOptions & { at?: number } = {}): Snapshot {
+    const live = new Map(this.pausePlan().map((d) => [d.id, d]));
+    const chosen = ids.filter((id) => live.has(id));
+    if (!chosen.length) throw new InputError(['No discount is live right now']);
+    const at = options.at ?? this.now();
+    const batch = `pause-${at.toString(36)}`;
+    const changed = new Map(chosen.map((id) => [id, { ...live.get(id)!, ends: at }]));
+    const discounts = this.store.discounts.map((d) => changed.get(d.id) ?? d);
+    const entries = chosen.map((id) => ({ action: 'pause' as const, discount: id, before: live.get(id)!, after: changed.get(id)!, where: options.where ?? 'local' }));
+    const app = this.recorded(this.app, entries);
+    const n = app.history.length;
+    app.history = app.history.map((e, i) => (i >= n - entries.length ? { ...e, batch } : e));
+    return this.commit({ ...this.store, discounts }, app);
+  }
+
+  /** The changes Resume all would undo: each paused discount, as it is now and as it was. */
+  batchPlan(batch: string): { entry: string; current: Discount; before: Discount }[] {
+    const entries = this.app.history.filter((e) => e.batch === batch && !e.rolledBack && e.before && e.after);
+    if (!entries.length) throw new InputError(['Those changes were already undone']);
+    return entries.flatMap((e) => {
+      const current = this.store.discounts.find((d) => d.id === e.after!.id);
+      // A discount changed again since keeps its newer version.
+      return current && JSON.stringify(current) === JSON.stringify(e.after) ? [{ entry: e.id, current, before: e.before! }] : [];
+    });
+  }
+
+  /** Rolls back a batch. When linked to Shopify, pass only the entries Shopify accepted. */
+  rollbackBatch(batch: string, entryIds: string[], options: SaveOptions = {}): Snapshot {
+    const plan = this.batchPlan(batch).filter((p) => entryIds.includes(p.entry));
+    if (!plan.length) throw new InputError(['Nothing in that batch can be undone now']);
+    const restore = new Map(plan.map((p) => [p.current.id, p.before]));
+    const discounts = this.store.discounts.map((d) => restore.get(d.id) ?? d);
+    const done = new Set(plan.map((p) => p.entry));
+    const marked = { ...this.app, history: this.app.history.map((e) => (done.has(e.id) ? { ...e, rolledBack: true } : e)) };
+    const entries = plan.map((p) => ({ action: 'rollback' as const, discount: p.before.id, before: p.current, after: p.before, where: options.where ?? 'local' }));
+    const app = this.recorded(marked, entries);
+    const n = app.history.length;
+    app.history = app.history.map((e, i) => (i >= n - entries.length ? { ...e, batch: `${batch}-undo` } : e));
+    return this.commit({ ...this.store, discounts }, app);
   }
 
   private recorded(app: AppState, entries: Omit<HistoryEntry, 'id' | 'at' | 'rolledBack'>[], link?: ShopifyLink | null): AppState {
@@ -246,6 +334,17 @@ export class Workspace {
     }
     const before = originalId ? discounts.find((d) => d.id === originalId) ?? null : null;
     if (originalId && !before) throw new InputError([`${originalId} is no longer in this audit`]);
+    // Block mode is enforced here, not only on screen. Ending a discount can only remove stacks.
+    if (this.app.guardrails.mode === 'block' && options.action !== 'end' && options.action !== 'pause') {
+      const check = this.checkDiscount(discount, originalId);
+      if (check.blocked) {
+        throw new InputError([
+          check.leaks.length
+            ? `Your guardrails block this: it would sell ${check.leaks[0].title} below cost`
+            : `Your guardrails block this: it would take ${check.belowFloor[0].title} below its minimum margin`,
+        ]);
+      }
+    }
     const next = originalId ? discounts.map((d) => (d.id === originalId ? discount : d)) : [...discounts, discount];
     const app = this.recorded(
       this.app,
@@ -394,7 +493,9 @@ export class Workspace {
     const settings = { ...this.app.settings, storeName: storeName.trim(), ...(currency ? { currency } : {}) };
     checkSettings(settings);
     const link = shopify ? checkState({ ...defaultState(false), shopify }).shopify : null;
-    return this.commit(store, { settings, checklist: [], sample: false, history: [], shopify: link });
+    // Collection floors belong to the old store's collections; the mode carries over.
+    const guardrails = { collections: {}, mode: this.app.guardrails.mode };
+    return this.commit(store, { settings, checklist: [], sample: false, history: [], shopify: link, guardrails });
   }
 
   /** New data from Shopify for the same store: keeps settings, checklist and history. */

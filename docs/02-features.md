@@ -124,7 +124,19 @@ Status: S01-S08 and S10-S13 are built and tested. S02's checkout confirmation ra
 - [x] Each change keeps the discount before and after, where it was saved, and rolls back the latest change per discount, in Shopify too when linked.
 - [x] Checklist fixes are recorded, and are made in Shopify directly when linked.
 
+### M5 Margin guardrails
+- [x] Store and per-collection minimum margins; a collection's floor replaces the store's for its products.
+- [x] The guard lists products a change takes below their floor; Block mode refuses the save in the engine.
+
+### M7 Watch for changes
+- [x] Shopify webhooks (discounts, products, inventory items) reach the Worker, verified by signature, and are logged per store in KV without costs.
+- [x] The app shows outside changes, skips its own, re-reads the store on request and names any new leak. Optional Slack alerts.
+
+### M8 Bulk codes and kill switch
+- [x] Up to 1,000 unique codes per code discount, downloaded and added in Shopify (checked against a real store).
+- [x] Pause all ends every live discount as one batch; Resume all restores each, reporting any Shopify refused.
+
 ## Not in this version
 
-Checkout blocking, accounts, approvals, alerts, bulk codes, billing, order analytics, taxes and payment fees.
+Checkout blocking, accounts, approvals, email alerts, billing, order analytics, taxes and payment fees.
 

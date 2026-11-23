@@ -8,7 +8,7 @@ import { useWriter } from '../writer.ts';
 
 const WHEN = new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const VERB: Record<HistoryEntry['action'], string> = {
-  create: 'Created', update: 'Changed', end: 'Ended', reactivate: 'Running again', delete: 'Deleted', fix: 'Fixed from the checklist', rollback: 'Rolled back',
+  create: 'Created', update: 'Changed', end: 'Ended', reactivate: 'Running again', delete: 'Deleted', fix: 'Fixed from the checklist', rollback: 'Rolled back', pause: 'Paused with all discounts',
 };
 const CLASSES = { product: 'product', order: 'order', shipping: 'shipping' } as const;
 

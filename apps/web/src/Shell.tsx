@@ -22,6 +22,7 @@ import { PRODUCT_NAME } from '../../../packages/core/src/product.ts';
 import { productHref, useApp, type Route } from './context.ts';
 import { call, explainError } from './engine.ts';
 import { download, Icon } from './ui.tsx';
+import { ChangesBanner } from './watch.tsx';
 
 const SAVED = {
   device: 'Saved on this device',
@@ -229,6 +230,7 @@ export function Shell({ route, toast, dismissToast, children }: {
 
             <div className="main-panel">
               <main id="main" tabIndex={-1}>
+                <ChangesBanner />
                 {(data.saved === 'locked' || data.saved === 'unavailable') && (
                   <div className="banner">
                     <p>

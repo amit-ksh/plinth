@@ -420,6 +420,50 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
     }
   });
 
+  test(`${name}: guardrails catch margins below a collection's floor, and Block refuses the save`, async () => {
+    const w = await workspace();
+    const knit = w.snapshot().store.discounts.find((d) => d.id === 'KNIT10')!;
+    // 50% off knitwear stays above cost (cost is a quarter of price) but leaves a 41% margin with WELCOME15, under a 45% floor.
+    const deep = { ...knit, bps: 5000 };
+    assert.deepEqual(w.checkDiscount(deep, 'KNIT10').belowFloor, []);
+    w.saveGuardrails({ collections: { knitwear: 4500 }, mode: 'warn' });
+    const warned = w.checkDiscount(deep, 'KNIT10');
+    assert.equal(warned.leaks.length, 0);
+    assert.ok(warned.belowFloor.length > 0 && warned.belowFloor.every((b) => b.id.startsWith('knitwear') && b.floorBps === 4500));
+    assert.equal(warned.blocked, false);
+    // The audit marks knitwear Thin against its own floor, and leaves other collections alone.
+    const audited = w.snapshot().audit.variants;
+    assert.ok(audited.filter((v) => v.id.startsWith('home-')).every((v) => v.state !== 'thin'));
+
+    w.saveGuardrails({ collections: { knitwear: 4500 }, mode: 'block' });
+    assert.equal(w.checkDiscount(deep, 'KNIT10').blocked, true);
+    assert.throws(() => w.saveDiscount(deep, 'KNIT10'), /guardrails block/);
+    // Ending a discount is never blocked.
+    w.saveDiscount({ ...knit, ends: NOW }, 'KNIT10', { action: 'end' });
+    assert.throws(() => w.saveGuardrails({ collections: { nope: 100 }, mode: 'warn' }), InputError);
+    assert.throws(() => w.saveGuardrails({ collections: { knitwear: 10000 }, mode: 'warn' }), InputError);
+    // Guardrails survive a backup and restore.
+    assert.deepEqual((await workspace()).restore(w.backup()).app.guardrails, { collections: { knitwear: 4500 }, mode: 'block' });
+  });
+
+  test(`${name}: pause all ends every live discount as one batch, and resume all restores them`, async () => {
+    const w = await workspace();
+    const live = w.pausePlan();
+    assert.ok(live.length >= 10);
+    const paused = w.pauseAll(live.map((d) => d.id), { at: NOW });
+    assert.equal(paused.audit.counts.leak, 0, 'nothing leaks with every discount ended');
+    const batch = paused.app.history.at(-1)!.batch!;
+    assert.ok(paused.app.history.slice(-live.length).every((e) => e.batch === batch && e.action === 'pause'));
+    assert.equal(w.pausePlan().length, 0);
+    assert.throws(() => w.pauseAll(['BUNDLE20']), /No discount is live/);
+
+    const plan = w.batchPlan(batch);
+    assert.equal(plan.length, live.length);
+    const resumed = w.rollbackBatch(batch, plan.map((p) => p.entry));
+    assert.equal(resumed.audit.counts.leak, 2);
+    assert.throws(() => w.batchPlan(batch), /already undone/);
+  });
+
   test(`${name}: a store with no app node still opens`, async () => {
     const db = await loaded(SAMPLE_STORE);
     const w = new Workspace({ saved: 'read-only', active: () => db, replace: () => assert.fail(), scratch: () => db });

@@ -84,3 +84,39 @@ export async function openSession(sealed: string | null, secret: string, now = D
     return null;
   }
 }
+
+/** Shopify signs webhook bodies: base64 HMAC-SHA256 of the raw body with the app's secret. */
+export async function validWebhook(body: ArrayBuffer, signature: string | null, secret: string): Promise<boolean> {
+  if (!signature || !secret) return false;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const expected = btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign('HMAC', key, body))));
+  return sameText(expected, signature);
+}
+
+export interface ChangeEvent {
+  id: string;
+  topic: string;
+  /** Epoch milliseconds. */
+  at: number;
+  label: string;
+  gid: string | null;
+}
+
+/** A short, cost-free line for a webhook, or null for topics Plinth doesn't track. */
+export function describeWebhook(topic: string, payload: any, id: string, at: number): ChangeEvent | null {
+  const gid = typeof payload?.admin_graphql_api_id === 'string' ? payload.admin_graphql_api_id : null;
+  const name = String(payload?.title ?? payload?.sku ?? payload?.id ?? '').slice(0, 120);
+  const labels: Record<string, string> = {
+    'discounts/create': `Discount created: ${name}`,
+    'discounts/update': `Discount changed: ${name}`,
+    'discounts/delete': 'A discount was deleted',
+    'products/update': `Product changed: ${name}`,
+    'inventory_items/update': `Cost or inventory item changed${payload?.sku ? `: ${String(payload.sku).slice(0, 60)}` : ''}`,
+  };
+  const label = labels[topic];
+  return label ? { id: id.slice(0, 80), topic, at, label, gid } : null;
+}
+
+/** Only Slack incoming-webhook URLs are accepted, so the Worker can't be pointed at anything else. */
+export const isSlackUrl = (url: unknown): url is string =>
+  typeof url === 'string' && url.length <= 300 && /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/_-]+$/.test(url);

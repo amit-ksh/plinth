@@ -2,16 +2,19 @@ import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import DiscountTag01Icon from '@hugeicons/core-free-icons/DiscountTag01Icon';
 import Layers01Icon from '@hugeicons/core-free-icons/Layers01Icon';
+import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
+import PauseIcon from '@hugeicons/core-free-icons/PauseIcon';
 import PlayIcon from '@hugeicons/core-free-icons/PlayIcon';
 import StopCircleIcon from '@hugeicons/core-free-icons/StopCircleIcon';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { generateCodes, MAX_BULK_CODES } from '../../../../packages/core/src/shopify-write.ts';
 import { TEMPLATES, type Template } from '../../../../packages/core/src/templates.ts';
 import type { Discount } from '../../../../packages/core/src/types.ts';
 import type { PromotionCheck } from '../../../../packages/core/src/workspace.ts';
 import { productHref, useApp } from '../context.ts';
 import { amountOf, DiscountForm, summarize, targetOf } from '../DiscountForm.tsx';
 import { call, explainError } from '../engine.ts';
-import { Icon, Issues, Page, plural } from '../ui.tsx';
+import { Disclosure, download, Icon, Issues, Page, plural } from '../ui.tsx';
 import { useWriter } from '../writer.ts';
 
 // A colon can't be confused with a real code someone typed, because codes shown here come from the store.
@@ -53,36 +56,129 @@ function Templates({ onPick }: { onPick: (template: Template | null) => void }) 
   );
 }
 
-/** Shown when a save would put products below cost. Saving anyway is allowed; it's the merchant's call. */
+/** Shown when a save breaks a guardrail: below cost, or below a margin floor. Block mode refuses the save. */
 function Guard({ check, onSave, onBack, saveLabel }: { check: PromotionCheck; onSave: () => void; onBack: () => void; saveLabel: string }) {
   const { money } = useApp();
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => title.current?.focus(), []);
+  const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 ? 1 : 0)}%`;
+  const margin = (net: number, cost: number) => pct(Math.round(((net - cost) * 10000) / net));
+  const heading = check.leaks.length
+    ? plural(check.leaks.length, { one: 'This would sell {n} product below cost', other: 'This would sell {n} products below cost' })
+    : plural(check.belowFloor.length, { one: 'This would take {n} product below its minimum margin', other: 'This would take {n} products below their minimum margin' });
   return (
-    <section className="card leak" aria-labelledby="guard-title">
-      <h2 id="guard-title" tabIndex={-1} ref={title}>
-        {plural(check.leaks.length, { one: 'This would sell {n} product below cost', other: 'This would sell {n} products below cost' })}
-      </h2>
-      <ul className="rows">
-        {check.leaks.slice(0, 5).map(({ id, title: name, outcome }) => (
-          <li key={id}>
-            <a className="row" href={productHref(id)}>
-              <span className="body">
-                <strong>{name}</strong>
-                <span className="caption code">{outcome.stack.join(' + ')}</span>
-              </span>
-              <span className="end danger-text num">Loses {money(outcome.cost - outcome.net)}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+    <section className={`card ${check.leaks.length ? 'leak' : 'unknown'}`} aria-labelledby="guard-title">
+      <h2 id="guard-title" tabIndex={-1} ref={title}>{heading}</h2>
+      {check.leaks.length > 0 && (
+        <ul className="rows">
+          {check.leaks.slice(0, 5).map(({ id, title: name, outcome }) => (
+            <li key={id}>
+              <a className="row" href={productHref(id)}>
+                <span className="body">
+                  <strong>{name}</strong>
+                  <span className="caption code">{outcome.stack.join(' + ')}</span>
+                </span>
+                <span className="end danger-text num">Loses {money(outcome.cost - outcome.net)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
       {check.leaks.length > 5 && <p className="caption">Showing the 5 biggest losses of {check.leaks.length}.</p>}
-      <p>Turn off a combination, lower the amount or narrow what it applies to, then save again.</p>
+      {check.belowFloor.length > 0 && (
+        <>
+          {check.leaks.length > 0 && (
+            <h3>{plural(check.belowFloor.length, { one: '{n} more product drops below its minimum margin', other: '{n} more products drop below their minimum margin' })}</h3>
+          )}
+          <ul className="rows">
+            {check.belowFloor.slice(0, 5).map(({ id, title: name, outcome, floorBps }) => (
+              <li key={id}>
+                <a className="row" href={productHref(id)}>
+                  <span className="body">
+                    <strong>{name}</strong>
+                    <span className="caption code">{outcome.stack.join(' + ')}</span>
+                  </span>
+                  <span className="end num">{margin(outcome.net, outcome.cost)} margin, minimum {pct(floorBps)}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <p>
+        {check.blocked
+          ? 'Your guardrails block this change. Turn off a combination, lower the amount or narrow what it applies to. Guardrails are in Settings.'
+          : 'Turn off a combination, lower the amount or narrow what it applies to, then save again.'}
+      </p>
       <div className="actions">
         <button className="btn primary" onClick={onBack}>Change it</button>
-        <button className="btn" onClick={onSave}>{saveLabel}</button>
+        {!check.blocked && <button className="btn" onClick={onSave}>{saveLabel}</button>}
       </div>
     </section>
+  );
+}
+
+/** Unique single-use style codes for a code discount: downloaded as CSV, and added to Shopify when linked. */
+function UniqueCodes({ discount }: { discount: Discount }) {
+  const writer = useWriter();
+  const { notify } = useApp();
+  const [count, setCount] = useState('100');
+  const [prefix, setPrefix] = useState(discount.id.slice(0, 20));
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const uid = useId();
+
+  const make = async (event: FormEvent) => {
+    event.preventDefault();
+    const n = /^\d+$/.test(count.trim()) ? Number(count) : 0;
+    if (n < 1 || n > MAX_BULK_CODES) {
+      setError(`Choose from 1 to ${MAX_BULK_CODES} codes`);
+      document.getElementById(`${uid}-count`)?.focus();
+      return;
+    }
+    setError('');
+    setBusy(true);
+    try {
+      const codes = generateCodes(prefix, n);
+      if (writer.linked) {
+        const queued = await writer.addCodes(discount, codes);
+        notify(`${queued} codes added to ${discount.id} in Shopify and downloaded`);
+      } else {
+        notify(`${codes.length} codes downloaded. Add them to ${discount.id} in Shopify`);
+      }
+      download(`${discount.id}-codes.csv`, `code\n${codes.join('\n')}\n`, 'text/csv');
+    } catch (e) {
+      setError(explainError(e).join('. '));
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Disclosure summary="Generate unique codes">
+      <form className="form" onSubmit={make} noValidate>
+        <p className="muted">
+          Each code works like {discount.id}, with the same amount and combination settings, so the leak check above covers them.
+          {writer.linked ? ' They are added to this discount in Shopify.' : ''}
+        </p>
+        <div className="fields">
+          <div className="field">
+            <label htmlFor={`${uid}-count`}>How many</label>
+            <input id={`${uid}-count`} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} aria-invalid={!!error || undefined} aria-describedby={error ? `${uid}-error` : undefined} />
+          </div>
+          <div className="field">
+            <label htmlFor={`${uid}-prefix`}>Starts with (optional)</label>
+            <input id={`${uid}-prefix`} autoComplete="off" spellCheck={false} value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+          </div>
+        </div>
+        {error && <p className="error" id={`${uid}-error`}>{error}</p>}
+        <div className="actions">
+          <button className="btn with-icon" type="submit" aria-disabled={busy || undefined}>
+            <Icon icon={Download01Icon} />
+            {writer.linked ? 'Add to Shopify and download' : 'Download codes'}
+          </button>
+        </div>
+      </form>
+    </Disclosure>
   );
 }
 
@@ -117,7 +213,7 @@ function Editor({ id }: { id: string }) {
     setIssues([]);
     try {
       const result = await call('checkDiscount', named, adding ? undefined : id);
-      if (result.leaks.length) {
+      if (result.leaks.length || result.belowFloor.length) {
         setDraft(named);
         setCheck(result);
         return;
@@ -160,6 +256,7 @@ function Editor({ id }: { id: string }) {
           />
         </div>
       )}
+      {existing && !check && existing.method === 'code' && existing.supported && <UniqueCodes discount={existing} />}
       {existing && !check && (
         <div className="actions">
           {status === 'ended' ? (
@@ -189,6 +286,66 @@ function Editor({ id }: { id: string }) {
   );
 }
 
+/** Pause all, with a confirmation, and the banner that resumes a paused batch. */
+function KillSwitch() {
+  const { data } = useApp();
+  const writer = useWriter();
+  const [confirming, setConfirming] = useState(false);
+  const now = Date.now();
+  const live = data.store.discounts.filter((d) => statusOf(d, now) === 'active');
+  const paused = [...data.app.history].reverse().find((e) => e.action === 'pause' && e.batch && !e.rolledBack);
+  const pausedCount = paused ? data.app.history.filter((e) => e.batch === paused.batch && !e.rolledBack).length : 0;
+
+  if (paused) {
+    return (
+      <div className="card tinted kill" role="status">
+        <p>
+          <strong>{plural(pausedCount, { one: '{n} discount paused', other: '{n} discounts paused' })}</strong>{' '}
+          <span className="muted">at {new Date(paused.at).toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })}. Customers can’t use them.</span>
+        </p>
+        <div className="actions">
+          <button className="btn primary with-icon" onClick={() => writer.resumeAll(paused.batch!)}>
+            <Icon icon={PlayIcon} />
+            Resume all
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (!live.length) return null;
+  if (confirming) {
+    return (
+      <div className="card unknown kill">
+        <p>
+          <strong>Pause {plural(live.length, { one: '{n} live discount', other: 'all {n} live discounts' })}?</strong>{' '}
+          {writer.linked ? `They end now in ${writer.shop}.` : 'They end now in this audit.'} Resume all puts them back as they were.
+        </p>
+        <div className="actions">
+          <button
+            className="btn primary with-icon"
+            onClick={async () => {
+              setConfirming(false);
+              await writer.pauseAll();
+            }}
+          >
+            <Icon icon={PauseIcon} />
+            Pause all
+          </button>
+          <button className="btn" onClick={() => setConfirming(false)}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="actions">
+      <button className="btn with-icon" onClick={() => setConfirming(true)}>
+        <Icon icon={PauseIcon} />
+        Pause all discounts
+      </button>
+    </div>
+  );
+}
+
 export function Discounts({ id }: { id?: string }) {
   const { data, money } = useApp();
   const writer = useWriter();
@@ -213,6 +370,7 @@ export function Discounts({ id }: { id?: string }) {
         </a>
       }
     >
+      {discounts.length > 0 && <KillSwitch />}
       {discounts.length ? (
         <div className="table-wrap">
           <table className="table">

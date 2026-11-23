@@ -32,6 +32,10 @@ Plinth is where discounts are planned, created and changed, with a leak check in
 | **Leak guard** | Before any save, the change is audited in a scratch graph. If it would sell anything below cost, Plinth names the products and the stacks; you change it or save anyway |
 | **Calendar** | The next six weeks: which discounts are live each day and how many products lose money on each stretch, with a scheduled sale's leaks shown only on its days |
 | **History** | Every change with the full discount before and after, where it was saved, and a rollback for the latest change to each discount |
+| **Guardrails** | A minimum margin for the store and per collection, checked on every save. Warn mode lets you save anyway; Block mode refuses the save in the engine, not just on screen |
+| **Pause all** | Ends every live discount at once, in Shopify too when linked, as one batch that **Resume all** puts back exactly as it was |
+| **Unique codes** | Up to 1,000 random codes for a code discount, downloaded as CSV and added to the discount in Shopify when linked |
+| **Watch for changes** | Shopify webhooks tell the Worker when a discount, product or cost changes outside Plinth. The app shows the change, re-reads the store on request and says whether anything new leaks. Optional Slack alerts |
 
 When the audit is linked to a Shopify store, saves, ends, deletes and rollbacks are written to Shopify first, and only recorded locally if Shopify accepts them. Otherwise they change this audit only.
 
@@ -105,7 +109,8 @@ Point the server at `data/store`.
 
 - [`demo/store`](demo/store) is a persistent Relate directory store with 50 synthetic variants and 12 discounts. Inspect it with `npm run demo:audit`. `.gitattributes` marks it binary, because Relate cannot open it if Git rewrites its line endings.
 - Store data from Shopify passes through the Worker in memory and is never stored there. The access token lives only in an encrypted HttpOnly cookie that expires with it.
-- Discount history (each change, before and after) is saved with the audit in the browser and in backups.
+- Discount history (each change, before and after) and guardrails are saved with the audit in the browser and in backups.
+- Cloudflare KV keeps, per connected store, the last 100 change notices from Shopify webhooks (discount titles, product titles, SKUs; never costs or prices) and the Slack URL if alerts are on. Removing the app from the store clears both.
 - The browser app saves to two OPFS stores on the device. A save finishes in the idle one before switching, so an interrupted save loses nothing.
 
 ## Develop

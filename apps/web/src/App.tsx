@@ -70,11 +70,11 @@ export function App() {
 
   const notify = useCallback((message: string) => setToast({ message, undo: false }), []);
 
-  const change = useCallback(async (work: () => Promise<Snapshot>, done: string) => {
+  const change = useCallback(async (work: () => Promise<Snapshot>, done: string | (() => string)) => {
     try {
       const next = await work();
       setData(next);
-      setToast({ message: done, undo: next.canUndo });
+      setToast({ message: typeof done === 'function' ? done() : done, undo: next.canUndo });
       return true;
     } catch (error) {
       setToast({ message: explainError(error).join('. '), undo: false });
