@@ -56,4 +56,4 @@ Use Leak, Thin, Unknown and Clear in model. Do not say safe, guaranteed or exact
 | 1:02-1:18 | Simulate fix | "One setting closes the leak. Here is what else that change would break." |
 | 1:18-1:28 | Show query | "Cypher in Relate, in the browser. Margin data never leaves the machine." |
 | 1:28-1:42 | Claude Code over MCP | "An agent checks the same local store before anyone creates the next promotion." |
-| 1:42-1:50 | URL and repository | "StackLeak. Find the stack before your customers do." |
+| 1:42-1:50 | URL and repository | "Plinth. Find the stack before your customers do." |

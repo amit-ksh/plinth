@@ -33,7 +33,7 @@ test('reading the committed store does not change it', () => {
 
 for (const autocrlf of ['true', 'false', 'input']) {
   test(`store survives a clone with core.autocrlf=${autocrlf}`, () => {
-    const temp = mkdtempSync(join(tmpdir(), 'stackleak-clone-'));
+    const temp = mkdtempSync(join(tmpdir(), 'plinth-clone-'));
     try {
       const source = join(temp, 'source');
       const clone = join(temp, 'clone');

@@ -20,7 +20,7 @@ const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/
 const { server, url } = process.env.E2E_URL
   ? { server: null, url: process.env.E2E_URL }
   : await serve(join(root, 'apps/web/dist'));
-const profile = mkdtempSync(join(tmpdir(), 'stackleak-e2e-'));
+const profile = mkdtempSync(join(tmpdir(), 'plinth-e2e-'));
 
 const failures: string[] = [];
 const problems: string[] = []; // console errors, CSP violations, requests leaving the device

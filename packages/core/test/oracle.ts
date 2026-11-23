@@ -1,4 +1,4 @@
-// Test-only reference evaluator ("oracle") for StackLeak. Exhaustive, no dependencies.
+// Test-only reference evaluator ("oracle") for Plinth. Exhaustive, no dependencies.
 
 export type DiscountClass = 'product' | 'order' | 'shipping';
 export interface OracleVariant { id: string; price: number; cost: number | null; collections: string[] }

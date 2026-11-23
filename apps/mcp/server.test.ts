@@ -66,7 +66,7 @@ test('five read-only tools answer over stdio and leave the store untouched', asy
 });
 
 test('a browser backup becomes a store the server can read', async () => {
-  const temp = mkdtempSync(join(tmpdir(), 'stackleak-mcp-'));
+  const temp = mkdtempSync(join(tmpdir(), 'plinth-mcp-'));
   try {
     const app = defaultState(false);
     app.settings.storeName = 'Imported shop';

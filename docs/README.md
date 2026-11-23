@@ -1,4 +1,4 @@
-# StackLeak documentation
+# Plinth documentation
 
 | Document | What it covers |
 |---|---|

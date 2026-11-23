@@ -1,7 +1,7 @@
 /*
   The single source of design values.
 
-  Color: forest and cream, the StackLeak brand.
+  Color: forest and cream, the Plinth brand.
   Shape and proportion: a rounded window with a sidebar and one content column.
   Components use semantic tokens only. Green never means "safe". Red is only a leak. Amber is only unknown.
 */

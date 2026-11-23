@@ -1,7 +1,7 @@
 // Cloudflare static hosting for the built app. Deploy with `npm run deploy` from the repository root.
 {
   "$schema": "https://unpkg.com/wrangler@4.166.0/config-schema.json",
-  "name": "stackleak",
+  "name": "plinth",
   "compatibility_date": "2026-11-19",
   "assets": {
     "directory": "./dist",

@@ -1,12 +1,12 @@
-# StackLeak
+# Plinth
 
-Find the discount stack that sells below cost, before your customers do. (Working name.)
+Find the discount stack that sells below cost, before your customers do.
 
 ![The home screen: the products selling below cost, the discounts that stack, and a promotion check](docs/screenshots/home.png)
 
 ## Try it
 
-**Live:** [stackleak.amit-ksh.workers.dev](https://stackleak.amit-ksh.workers.dev). Everything runs in your browser on a synthetic sample store.
+**Live:** [plinth.amit-ksh.workers.dev](https://plinth.amit-ksh.workers.dev). Everything runs in your browser on a synthetic sample store.
 
 To run it locally, you need Node 22.16 or later.
 
@@ -23,7 +23,7 @@ It opens on a synthetic sample store, with no account, key or upload. Add `?demo
 
 ## Use case
 
-Each promotion in a store can be profitable alone. A 20% product discount, a 15% welcome code and free shipping together turn a $100 jacket that costs $65 into a $60 sale. StackLeak is for merchants and agencies who need to find those stacks before a sale goes live.
+Each promotion in a store can be profitable alone. A 20% product discount, a 15% welcome code and free shipping together turn a $100 jacket that costs $65 into a $60 sale. Plinth is for merchants and agencies who need to find those stacks before a sale goes live.
 
 The relationships that matter are which discounts reach which products, and which pairs of discounts allow each other. A stack is possible only when **every** pair in it combines, so this is a search for fully connected groups.
 
@@ -84,7 +84,7 @@ npm run dev            # dev server
 npm test               # both engines, an independent evaluator, features, clone, MCP
 npm run typecheck
 npm run build && npm run test:e2e    # real browser (Edge on Windows, Chrome elsewhere)
-E2E_URL=https://stackleak.amit-ksh.workers.dev/ npm run test:e2e   # same checks against the live copy
+E2E_URL=https://plinth.amit-ksh.workers.dev/ npm run test:e2e   # same checks against the live copy
 npm run deploy         # build and publish to Cloudflare (needs wrangler login)
 ```
 
@@ -114,4 +114,4 @@ Design, code, tests and documentation were written with significant help from Cl
 
 Code is [MIT](LICENSE).
 
-StackLeak is not affiliated with or endorsed by Neo4j or Shopify.
+Plinth is not affiliated with or endorsed by Neo4j or Shopify.

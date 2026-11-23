@@ -29,15 +29,14 @@ const SAVED = {
   'read-only': 'Read only',
 } as const;
 
-/** Three stacked discount layers; the last one drips. */
+/** A plinth: the stepped base a column stands on, the floor a price should never go under. */
 function Mark() {
   return (
     <span className="mark" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 2.5 17 6l-7 3.5L3 6z" fill="currentColor" />
-        <path d="M3 9.75 10 13.25l7-3.5" />
-        <path d="M3 13.5 10 17l2.5-1.25" />
-        <path d="M16 13.2s1.9 2.050 1.9 3.250a1.900 1.900 0 0 1-3.800 0c0-1.200 1.900-3.250 1.900-3.250z" fill="currentColor" stroke="none" />
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <rect x="7" y="2.5" width="6" height="7" rx="1" />
+        <rect x="4.5" y="10.5" width="11" height="2.75" rx="1" />
+        <rect x="2.5" y="14.250" width="15" height="3.250" rx="1" />
       </svg>
     </span>
   );
