@@ -33,7 +33,7 @@
 
 ## P0
 
-Status: S01-S08 and S10-S13 are built and tested. The checkout confirmation in S02 waits for a Shopify development store.
+Status: S01-S08 and S10-S13 are built and tested. S02's checkout confirmation ran on a Shopify Plus development store on 2026-11-23: 13 of 13 carts match.
 
 ### S01 Sample and committed store
 - [ ] 50 synthetic variants, 5 collections, 12 discounts.

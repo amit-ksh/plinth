@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  applyChanges, audit, breakdown, defaultState, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
+  applyChanges, audit, breakdown, defaultState, explainStack, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
   netRevenue, parseCsv, parseMoney, parsePercent, parsePromotion, PRODUCTS_TEMPLATE, queries, readStore, SAMPLE_SCENARIO,
   SAMPLE_STORE, suggestFixes, Workspace,
   type Discount, type Driver, type StoreInput,
 } from '../src/index.ts';
 import { createSlots } from '../src/slots.ts';
+import { SHOPIFY_GOLDEN } from './shopify-golden.ts';
 
 const NOW = Date.parse('2026-11-23T00:00:00Z');
 
@@ -286,6 +287,22 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
     const html = w.report();
     assert.ok(!/<script|<img|https?:/i.test(html));
     assert.ok(html.includes('&lt;img') && html.includes('loses $5.00'));
+  });
+
+  test(`${name}: matches a real Shopify Plus checkout engine on 13 carts`, async () => {
+    const db = await loaded(SAMPLE_STORE);
+    const discount = new Map(SAMPLE_STORE.discounts.map((d) => [d.id, d]));
+    const variant = new Map(SAMPLE_STORE.variants.map((v) => [v.id, v]));
+    for (const cart of SHOPIFY_GOLDEN) {
+      const pairs = (cart.applied.length * (cart.applied.length - 1)) / 2;
+      assert.equal(explainStack(db, cart.applied).length, pairs, `${cart.name}: every applied pair combines`);
+      for (const code of cart.rejected) {
+        assert.ok(cart.applied.some((a) => explainStack(db, [code, a]).length === 0), `${cart.name}: ${code} is blocked`);
+      }
+      const v = variant.get(cart.variant)!;
+      const net = netRevenue(cart.applied.map((id) => discount.get(id)!), v.price, cart.qty, 0);
+      assert.equal(net, cart.total, `${cart.name}: total`);
+    }
   });
 
   test(`${name}: a store with no app node still opens`, async () => {

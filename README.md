@@ -99,7 +99,7 @@ Native Relate (tests, `demo:audit`, MCP) on Linux needs glibc 2.39 or later, suc
 
 ## Limits
 
-- The rules follow Shopify's developer documentation and one vendor guide. They are **not yet verified against a real checkout**, and there is no Shopify connection yet.
+- The pricing and combination rules match a real Shopify Plus development store on 13 carts, including both demo leaks (`packages/core/test/shopify-golden.ts`). Still unverified: shipping thresholds at checkout, several order discounts together, mixed fixed and percent discounts on one line, and stores without Plus. There is no Shopify connection yet.
 - One product per cart. Taxes, payment fees, markets, segments, Functions and Buy X Get Y are not modeled. Unsupported discounts show as "Can't be sure".
 - Searches stop at eight discounts in a stack and say so.
 - Tested in Edge and Chrome on Windows. Other browsers are untested.

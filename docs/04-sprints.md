@@ -12,7 +12,7 @@ One person, 5 hours a day, Nov 23 to Dec 11: **95 hours, 75 planned and 20 buffe
 | Reserve | Dec 11 | 5 | 0 | 5 | Emergencies only |
 | **Total** | | **95** | **75** | **20** | |
 
-**Status, Nov 23:** Sprints 1-4 are built, apart from L102 (development store), L206 (deploy), L405 (Devpost draft) and the desktop tasks L302-L303, which are out of scope.
+**Status, Nov 23:** Sprints 1-4 are built, apart from L405 (Devpost draft) and the desktop tasks L302-L303, which are out of scope.
 
 ## Sprint 1: Rules and engine
 
@@ -26,7 +26,7 @@ One person, 5 hours a day, Nov 23 to Dec 11: **95 hours, 75 planned and 20 buffe
 | L106 | Sample, committed store, parity and clone tests | S01 | 3 | L104 |
 | | **Total** | | **19** | |
 
-**Status:** L101 and L103-L106 done. L102 is blocked until a Shopify development store exists.
+**Status:** L101 and L103-L106 done. L102 done on 2026-11-23 against a Shopify Plus development store.
 
 **Exit gate:** both sample leaks match, the false trio is absent, and 500 variants with 15 discounts audit in under 3 seconds in WASM.
 

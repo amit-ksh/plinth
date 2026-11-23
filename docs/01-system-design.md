@@ -1,6 +1,6 @@
 # 01 System design
 
-Labels: **Tested** ran on 2026-11-22. **Documented** comes from Shopify developer docs. **Reported** comes from a vendor guide. **To verify** has neither run nor been confirmed.
+Labels: **Tested** ran on 2026-11-22. **Shopify-tested** matched a Shopify Plus development store's cart pricing on 2026-11-23, recorded in `packages/core/test/shopify-golden.ts`. **Documented** comes from Shopify developer docs. **Reported** comes from a vendor guide. **To verify** has neither run nor been confirmed.
 
 ## 1. Goal
 
@@ -14,14 +14,14 @@ Labels: **Tested** ran on 2026-11-22. **Documented** comes from Shopify develope
 |---|---|---|
 | D1 | Discounts have product, order or shipping classes | [Documented](https://shopify.dev/docs/apps/build/discounts) |
 | D2 | `combinesWith` declares which classes a discount combines with | [Documented](https://shopify.dev/docs/api/admin-graphql/latest/objects/DiscountCombinesWith) |
-| D3 | Several product discounts share a line only if every pair has a two-way tag match | Documented, same page |
-| D4 | Same-line product stacking needs Shopify Plus | [Reported](https://promly.app/blog/shopify-discount-codes-vs-automatic-discounts/) |
+| D3 | Several product discounts share a line only if every pair has a two-way tag match | Shopify-tested |
+| D4 | Same-line product stacking needs Shopify Plus | [Reported](https://promly.app/blog/shopify-discount-codes-vs-automatic-discounts/); works on Plus (Shopify-tested), non-Plus not tested |
 | D5 | Two shipping discounts never combine | Reported |
-| D6 | Product applies first, then order on the reduced subtotal, then shipping | Reported |
+| D6 | Product applies first, then order on the reduced subtotal, then shipping | Shopify-tested for product then order. Shipping thresholds not tested: carts don't price delivery |
 | D7 | Several order percentages each use the same subtotal | Reported |
 | D8 | At most 5 product or order codes plus 1 shipping code, and 25 active automatic discounts | Reported |
 | D9 | Order with order: the guide says automatic, the API has an explicit flag. Follow the flag | To verify |
-| D10 | Order of several product discounts, mixed fixed and percent, and rounding | To verify |
+| D10 | Order of several product discounts, mixed fixed and percent, and rounding | Percentages on one line compound (Shopify-tested). Mixed fixed and percent on one line, and odd-cent rounding: to verify |
 | D11 | Buy X Get Y stacks only on the "get" items | Documented, not modeled in v1 |
 
 Rules live in one versioned module. Each has a golden test taken from a development-store checkout.
