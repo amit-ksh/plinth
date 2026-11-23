@@ -450,3 +450,34 @@ pre { margin: 0; padding: var(--space-3); border-radius: var(--radius-control); 
   input:not([type="checkbox"], [type="radio"]), select, textarea { font-size: 1rem !important; }
   .home-head h1 { font-size: var(--text-title); }
 }
+
+/* Motion. One-time entrances use keyframes; interactive state uses transitions. Nothing moves under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  /* A page swap is frequent, so only a quick fade. */
+  main > .page, main > .home { animation: fade-in 150ms ease-out both; }
+
+  /* The dashboard's sections enter once, 100ms apart. */
+  .stats > *, .charts > * { animation: rise 300ms ease-out both; }
+  .stats > :nth-child(2) { animation-delay: 100ms; }
+  .stats > :nth-child(3) { animation-delay: 200ms; }
+  .stats > :nth-child(4) { animation-delay: 300ms; }
+  .charts > :nth-child(1) { animation-delay: 200ms; }
+  .charts > :nth-child(2) { animation-delay: 300ms; }
+  .charts > :nth-child(3) { animation-delay: 400ms; }
+  .charts > :nth-child(4) { animation-delay: 500ms; }
+  .charts > :nth-child(5) { animation-delay: 500ms; }
+
+  /* Charts grow from their baseline once, after their card arrives. */
+  .ranked-fill { transform-origin: left center; animation: grow-x 600ms cubic-bezier(0.2, 0, 0, 1) 400ms both; }
+  .segment { transform-origin: left center; animation: grow-x 600ms cubic-bezier(0.2, 0, 0, 1) 450ms both; }
+  .columns .col { transform-box: fill-box; transform-origin: bottom; animation: grow-y 500ms cubic-bezier(0.2, 0, 0, 1) 500ms both; }
+
+  .toast { animation: rise 300ms ease-out both; }
+  .stat, .chart-card, .template, .filter { transition-property: box-shadow, background-color, border-color; transition-duration: 150ms; transition-timing-function: ease-out; }
+  .ranked-row, .upcoming a, .legend a, .table tbody tr { transition: background-color 150ms ease-out; }
+  .columns .col { transition: opacity 150ms ease-out; }
+}
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; filter: blur(4px); translate: 0 12px; } }
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes grow-y { from { transform: scaleY(0); } }

@@ -18,9 +18,11 @@ if (shots) mkdirSync(shots, { recursive: true });
 
 const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 // E2E_URL tests a deployed copy instead of the local build.
-const { server, url } = process.env.E2E_URL
+const { server, url: site } = process.env.E2E_URL
   ? { server: null, url: process.env.E2E_URL }
   : await serve(join(root, 'apps/web/dist'));
+// The app lives under /app/; the landing page is at the site root.
+const url = new URL('app/', site).href;
 const profile = mkdtempSync(join(tmpdir(), 'plinth-e2e-'));
 
 const failures: string[] = [];
@@ -42,7 +44,7 @@ async function step(name: string, work: () => Promise<void>): Promise<void> {
 function watch(context: BrowserContext): void {
   context.on('request', (request) => {
     const to = request.url();
-    if (!to.startsWith(url) && !/^(data|blob|about):/.test(to)) problems.push(`request left the device: ${to}`);
+    if (!to.startsWith(new URL(site).origin + '/') && !/^(data|blob|about):/.test(to)) problems.push(`request left the device: ${to}`);
   });
   const listen = (p: Page) => {
     p.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
@@ -59,6 +61,8 @@ const launch = async () => {
     channel,
     viewport: { width: 1440, height: 900 },
     acceptDownloads: true,
+    // Checks run against settled screens; entrance motion is checked separately below.
+    reducedMotion: 'reduce',
   });
   watch(context);
   return context;
@@ -615,6 +619,27 @@ try {
     await page.getByRole('link', { name: 'Discounts', exact: true }).click();
     await heading('Discounts');
     await page.getByRole('button', { name: 'Open menu' }).waitFor();
+  });
+
+  await step('the landing page renders, links to the app, and moves only when motion is allowed', async () => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(site);
+    await page.getByRole('heading', { level: 1, name: /Every discount looks fine alone/ }).waitFor();
+    assert.equal(await page.locator('.receipt.done').count(), 1, 'reduced motion shows the receipt finished');
+    assert.equal(await page.getByRole('link', { name: 'Try it with sample data' }).first().getAttribute('href'), './app/');
+    await page.evaluate(`window.axe || (()=>{${axeSource}})()`);
+    const violations = await page.evaluate(async () =>
+      (await (window as any).axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] })).violations.map((v: any) => `${v.id} ${v.nodes[0].target}`),
+    );
+    assert.deepEqual(violations, []);
+    for (const width of [375, 320]) {
+      await page.setViewportSize({ width, height: 800 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `no sideways scroll at ${width}`);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.getByRole('link', { name: 'Try it with sample data' }).first().click();
+    await page.locator('main h1').first().waitFor();
+    assert.ok(page.url().includes('/app/'));
   });
 
   await step('no console errors, policy violations or outside requests', async () => {

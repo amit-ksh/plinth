@@ -304,6 +304,9 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
       const net = netRevenue(cart.applied.map((id) => discount.get(id)!), v.price, cart.qty, 0);
       assert.equal(net, cart.total, `${cart.name}: total`);
     }
+    // Receipt lines follow Shopify's allocation: the larger product percentage first (VIP25 $25, then BOOT20 $15).
+    const lines = breakdown(['BOOT20', 'VIP25'].map((id) => ({ ...discount.get(id)!, id })), 10000, 1, 0);
+    assert.deepEqual(lines.slice(1).map((l) => [l.label, l.amount]), [['VIP25', -2500], ['BOOT20', -1500]]);
   });
 
   test(`${name}: a real Shopify store imports and shows the same two leaks`, async () => {

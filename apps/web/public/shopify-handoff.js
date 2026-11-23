@@ -5,7 +5,7 @@
   try {
     var text = document.getElementById('shopify-result').textContent;
     sessionStorage.setItem('plinth-shopify', text);
-    location.replace('/#import');
+    location.replace('/app/#import');
   } catch (error) {
     if (status) status.textContent = 'This browser blocked the hand-off to Plinth. Allow site data for this page, then connect again.';
   }

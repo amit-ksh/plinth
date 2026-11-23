@@ -15,7 +15,7 @@ export function StatTile({ label, value, note, tone, href }: { label: string; va
         {label}
       </span>
       <span className="stat-value">{value}</span>
-      {note && <span className="stat-note">{note}</span>}
+      {note && <span className="stat-note" title={typeof note === 'string' ? note : undefined}>{note}</span>}
     </>
   );
   return href ? <a className="stat" href={href}>{body}</a> : <div className="stat">{body}</div>;

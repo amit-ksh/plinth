@@ -4,12 +4,222 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#02251a">
-    <meta name="description" content="Find discount stacks that sell below cost before your sale goes live.">
-    <title>Plinth</title>
+    <meta name="description" content="Plinth finds the discount stacks that sell your Shopify products below cost, and stops them before the sale goes live.">
+    <title>Plinth · Discounts that never sell below cost</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body class="landing">
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="lp-nav">
+      <a class="lp-brand" href="./" aria-label="Plinth home">
+        <span class="lp-mark" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><rect x="7" y="2.5" width="6" height="7" rx="1"/><rect x="4.5" y="10.5" width="11" height="2.75" rx="1"/><rect x="2.5" y="14.25" width="15" height="3.25" rx="1"/></svg>
+        </span>
+        Plinth
+      </a>
+      <nav class="lp-links" aria-label="Sections">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#relate">Under the hood</a>
+      </nav>
+      <a class="lp-btn small" href="./app/">Open the app</a>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="lp-eyebrow reveal">For Shopify stores and the agencies that run their sales</p>
+          <h1 id="hero-title" class="reveal">
+            Every discount looks fine alone.
+            <span class="hero-turn">Together, they sell below cost.</span>
+          </h1>
+          <p class="hero-lead reveal">
+            A 20% sale, a welcome code and free shipping can turn a $100 jacket that costs $65 into a $60 order.
+            Plinth finds every stack like that in your store, shows you why, and fixes it before the sale goes live.
+          </p>
+          <div class="hero-actions reveal">
+            <a class="lp-btn" href="./app/">Try it with sample data</a>
+            <a class="lp-btn ghost" href="./app/#import">Connect your store</a>
+          </div>
+          <p class="hero-note reveal">Runs in your browser. Costs never leave your device.</p>
+        </div>
+
+        <figure class="receipt-stage reveal" aria-labelledby="receipt-caption">
+          <div class="receipt" aria-hidden="true">
+            <div class="receipt-head">
+              <span class="receipt-product">Winter jacket</span>
+              <span class="receipt-badge">Checking stacks</span>
+            </div>
+            <ol class="receipt-codes">
+              <li data-step="1"><span class="code">BUNDLE20</span><span class="amt">−$20.00</span></li>
+              <li data-step="2"><span class="code">WELCOME15</span><span class="amt">−$12.00</span></li>
+              <li data-step="3"><span class="code">FREESHIP</span><span class="amt">−$8.00</span></li>
+            </ol>
+            <div class="receipt-lines">
+              <div><span>You keep</span><strong class="receipt-net">$100.00</strong></div>
+              <div><span>It costs you</span><span>$65.00</span></div>
+            </div>
+            <div class="receipt-verdict">
+              <span class="verdict-loss">Loses $5.00 on every order</span>
+              <span class="verdict-fix">Fix: stop BUNDLE20 combining with shipping</span>
+            </div>
+          </div>
+          <figcaption id="receipt-caption" class="sr">
+            Example: a $100 winter jacket that costs $65. BUNDLE20 takes $20, WELCOME15 takes $12, and free shipping costs $8.
+            Together the order earns $60, a $5 loss. Plinth suggests stopping BUNDLE20 from combining with shipping discounts.
+          </figcaption>
+        </figure>
+      </section>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <span>BUNDLE20 + WELCOME15 + FREESHIP</span><span class="bad">−$5.00</span>
+          <span>BOOT20 + VIP25</span><span class="bad">−$2.00</span>
+          <span>KNIT10 + WELCOME15</span><span class="ok">41% margin</span>
+          <span>SALE25 + FREESHIP50</span><span class="ok">No leak</span>
+          <span>CLEAR40 alone</span><span class="bad">−$5.00</span>
+          <span>VIP15 + SAVE10</span><span class="ok">No leak</span>
+          <span>BUNDLE20 + WELCOME15 + FREESHIP</span><span class="bad">−$5.00</span>
+          <span>BOOT20 + VIP25</span><span class="bad">−$2.00</span>
+          <span>KNIT10 + WELCOME15</span><span class="ok">41% margin</span>
+          <span>SALE25 + FREESHIP50</span><span class="ok">No leak</span>
+          <span>CLEAR40 alone</span><span class="bad">−$5.00</span>
+          <span>VIP15 + SAVE10</span><span class="ok">No leak</span>
+        </div>
+      </div>
+
+      <section class="problem" aria-labelledby="problem-title">
+        <h2 id="problem-title" class="reveal">Shopify checks each discount. Nobody checks the stack.</h2>
+        <div class="problem-grid">
+          <div class="fact reveal"><span class="fact-num" data-count="5">5</span><p>codes a customer can combine on one order, plus a shipping code and every automatic discount.</p></div>
+          <div class="fact reveal"><span class="fact-num" data-count="2">2</span><p>tags are all it takes for two product discounts to stack on the same item on Shopify Plus.</p></div>
+          <div class="fact reveal"><span class="fact-num">0</span><p>warnings when a combination you never meant sells below cost. You find out from the margin report.</p></div>
+        </div>
+      </section>
+
+      <section id="how" class="how" aria-labelledby="how-title">
+        <div class="section-head reveal">
+          <p class="lp-eyebrow">How it works</p>
+          <h2 id="how-title">From connected to fixed in three steps</h2>
+        </div>
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num">01</span>
+            <h3>Connect or import</h3>
+            <p>Sign in with Shopify, or bring two spreadsheets. Plinth reads products, costs and discounts once, and audits them in your browser.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">02</span>
+            <h3>Every stack, checked</h3>
+            <p>A graph of which discounts reach which products, and which pairs allow each other. Plinth searches it for every group that can apply together.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">03</span>
+            <h3>The smallest fix</h3>
+            <p>One setting to change, what else it breaks, and a preview. Make it from Plinth, or roll it back from history.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="features" class="features" aria-labelledby="features-title">
+        <div class="section-head reveal">
+          <p class="lp-eyebrow">One place for every discount</p>
+          <h2 id="features-title">Plan, launch and change promotions without the guesswork</h2>
+        </div>
+        <div class="bento">
+          <article class="tile tile-guard reveal">
+            <h3>A leak check before every save</h3>
+            <p>Change a discount and Plinth audits the result first. If it sells anything below cost, you see which products and why, before it reaches checkout.</p>
+            <div class="mini-guard" aria-hidden="true">
+              <span class="mini-row"><strong>Winter jacket</strong><span class="bad">Loses $5.00</span></span>
+              <span class="mini-row"><strong>Leather boots</strong><span class="bad">Loses $2.00</span></span>
+              <span class="mini-actions"><span class="mini-btn">Change it</span><span class="mini-btn ghost">Save anyway</span></span>
+            </div>
+          </article>
+          <article class="tile tile-calendar reveal">
+            <h3>A calendar that knows your margins</h3>
+            <p>Six weeks of promotions, and the days a scheduled sale would leak.</p>
+            <div class="mini-cols" aria-hidden="true"><i></i><i></i><i></i><i></i><i class="hot"></i><i class="hot"></i><i class="hot"></i><i></i><i></i><i></i><i></i><i></i></div>
+          </article>
+          <article class="tile reveal">
+            <h3>Guardrails</h3>
+            <p>Minimum margins for the store and each collection. Warn, or block the save outright.</p>
+          </article>
+          <article class="tile reveal">
+            <h3>History and rollback</h3>
+            <p>Every change with what it was before. Undo it, in Shopify too.</p>
+          </article>
+          <article class="tile tile-dark reveal">
+            <h3>Pause everything</h3>
+            <p>One button ends every live discount. Resume puts each back exactly as it was.</p>
+          </article>
+          <article class="tile reveal">
+            <h3>Templates that can’t leak alone</h3>
+            <p>Sitewide sale, welcome code, VIP, clearance: each with combination settings and a reason.</p>
+          </article>
+          <article class="tile tile-watch reveal">
+            <h3>Watches Shopify</h3>
+            <p>Someone edits a discount in the admin. Plinth notices, re-checks and tells you, in the app or in Slack.</p>
+          </article>
+          <article class="tile tile-wide reveal">
+            <h3>Ask your AI agent</h3>
+            <p>Five read-only tools over MCP. “Which products lose money if we run BFCM40 with free shipping?” gets an answer from the same audit.</p>
+            <code class="mini-code" aria-hidden="true">check_promotion("40% off winter") → 3 products below cost</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="relate" class="relate" aria-labelledby="relate-title">
+        <div class="relate-copy reveal">
+          <p class="lp-eyebrow">Under the hood</p>
+          <h2 id="relate-title">A stack is a clique in a graph</h2>
+          <p>
+            Discounts are nodes. Two discounts that can apply together share an edge, with the rule that allows it.
+            A stack is possible only when every pair in it connects, so Plinth grows fully connected groups on
+            <strong>Relate</strong>, Neo4j’s embedded graph database, in your browser and on disk.
+          </p>
+          <p class="relate-proof"><span class="proof-num">13 of 13</span> test carts priced to the cent against a real Shopify Plus checkout.</p>
+        </div>
+        <div class="graph reveal" aria-hidden="true">
+          <svg viewBox="0 0 320 260">
+            <g class="edges">
+              <line x1="70" y1="70" x2="250" y2="60" class="e e1 hot"/>
+              <line x1="70" y1="70" x2="160" y2="200" class="e e2 hot"/>
+              <line x1="250" y1="60" x2="160" y2="200" class="e e3 hot"/>
+              <line x1="250" y1="60" x2="290" y2="170" class="e e4"/>
+              <line x1="30" y1="180" x2="160" y2="200" class="e e5"/>
+              <line x1="30" y1="180" x2="70" y2="70" class="e e6"/>
+            </g>
+            <g class="nodes">
+              <g class="n hot" transform="translate(70 70)"><circle r="22"/><text>B20</text></g>
+              <g class="n hot" transform="translate(250 60)"><circle r="22"/><text>W15</text></g>
+              <g class="n hot" transform="translate(160 200)"><circle r="22"/><text>SHIP</text></g>
+              <g class="n" transform="translate(290 170)"><circle r="18"/><text>K10</text></g>
+              <g class="n" transform="translate(30 180)"><circle r="18"/><text>V25</text></g>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section class="cta" aria-labelledby="cta-title">
+        <h2 id="cta-title" class="reveal">Check your next sale before your customers do.</h2>
+        <div class="hero-actions reveal">
+          <a class="lp-btn light" href="./app/">Try it with sample data</a>
+          <a class="lp-btn ghost-light" href="./app/#import">Connect your store</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="lp-foot">
+      <span>Plinth. Free and open source under the MIT license.</span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/amit-ksh/plinth">GitHub</a>
+        <a href="./app/">Open the app</a>
+      </nav>
+      <span class="muted">Not affiliated with or endorsed by Neo4j or Shopify.</span>
+    </footer>
+
+    <script type="module" src="/src/landing/landing.ts"></script>
   </body>
 </html>

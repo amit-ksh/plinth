@@ -6,20 +6,22 @@ Find the discount stack that sells below cost, before your customers do.
 
 ## Try it
 
-**Live:** [plinth.amit-ksh.workers.dev](https://plinth.amit-ksh.workers.dev). Everything runs in your browser on a synthetic sample store.
+**Live:** the app is at [plinth.amit-ksh.workers.dev/app/](https://plinth.amit-ksh.workers.dev/app/), and the landing page at [plinth.amit-ksh.workers.dev](https://plinth.amit-ksh.workers.dev). Everything runs in your browser on a synthetic sample store.
 
 To run it locally, you need Node 22.16 or later.
 
 ```bash
 npm ci
-npm start              # builds, then serves http://localhost:4173
+npm start              # builds, then serves http://localhost:4173 (landing) and /app/ (the app)
 ```
 
-It opens on a synthetic sample store, with no account, key or upload. Add `?demo` to the URL for a copy that never saves.
+The app opens on a synthetic sample store, with no account, key or upload. Add `?demo` to the URL for a copy that never saves.
 
-1. Select **Winter jacket loses $5.00** to see the receipt, the reason each pair combines, and the Relate query.
+1. On the **Dashboard**, the loss chart shows **Winter jacket** losing $5.00. Select it to see the receipt, the reason each pair combines, and the Relate query.
 2. Select **Preview fix**, then **Add to checklist**.
-3. Go **Home** and type `70% off winter` to check a promotion before it exists.
+3. Under **Discounts**, select **Add discount**, pick **Clearance**, set it to Winter and save: the leak guard stops it and names the jacket.
+4. Give a discount a start and last day, then open **Calendar** to see its leak on those days only.
+5. On the **Dashboard**, type `70% off winter` to check a promotion before it exists.
 
 ## Manage discounts
 
@@ -120,7 +122,7 @@ npm run dev            # dev server
 npm test               # both engines, an independent evaluator, features, clone, MCP
 npm run typecheck
 npm run build && npm run test:e2e    # real browser (Edge on Windows, Chrome elsewhere)
-E2E_URL=https://plinth.amit-ksh.workers.dev/ npm run test:e2e   # same checks against the live copy
+E2E_URL=https://plinth.amit-ksh.workers.dev/ npm run test:e2e   # same checks against the live copy (site root; the app is under /app/)
 npm run deploy         # build and publish to Cloudflare (needs wrangler login)
 ```
 

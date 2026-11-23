@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
@@ -27,7 +28,17 @@ const contentPolicy: Plugin = {
 export default defineConfig({
   base: './',
   plugins: [react(), contentPolicy],
-  build: { target: 'es2022', assetsInlineLimit: 0 },
+  build: {
+    target: 'es2022',
+    assetsInlineLimit: 0,
+    // The landing page at / and the app at /app/.
+    rollupOptions: {
+      input: {
+        landing: fileURLToPath(new URL('./index.html', import.meta.url)),
+        app: fileURLToPath(new URL('./app/index.html', import.meta.url)),
+      },
+    },
+  },
   worker: { format: 'es' },
   optimizeDeps: { exclude: ['@relate/relate-wasm'] },
 });

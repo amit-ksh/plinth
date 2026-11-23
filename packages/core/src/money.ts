@@ -72,7 +72,9 @@ export function breakdown(
   shippingCost: number,
 ): ReceiptLine[] {
   const order = { product: 0, order: 1, shipping: 2 };
-  const sorted = [...stack].sort((a, b) => order[a.class] - order[b.class]);
+  // Shopify allocates the larger product percentage first; the receipt lists them that way so its lines match
+  // Shopify's. The total is the same in any order, since percentages compound.
+  const sorted = [...stack].sort((a, b) => order[a.class] - order[b.class] || (a.class === 'product' ? b.bps - a.bps : 0));
   const lines: ReceiptLine[] = [{ label: qty === 1 ? 'Price' : `Price × ${qty}`, kind: 'price', amount: price * qty }];
   const applied: Priced[] = [];
   let before = price * qty;

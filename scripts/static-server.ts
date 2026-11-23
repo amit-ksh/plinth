@@ -22,7 +22,7 @@ export function serve(directory: string): Promise<{ server: Server; url: string 
       response.writeHead(400).end();
       return;
     }
-    const file = resolve(root, path === '/' ? 'index.html' : `.${path}`);
+    const file = resolve(root, path.endsWith('/') ? `.${path}index.html` : `.${path}`);
     if (!file.startsWith(root + sep) || !existsSync(file) || !statSync(file).isFile()) {
       response.writeHead(404).end();
       return;

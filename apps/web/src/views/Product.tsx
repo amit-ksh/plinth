@@ -125,7 +125,7 @@ export function Product({ id }: { id: string }) {
 
   if (!row) {
     return (
-      <Page title="Product not found" lead="It may have been replaced by an import." back={{ href: '#audit', label: 'Audit' }}>
+      <Page title="Product not found" lead="It may have been replaced by an import." back={{ href: '#audit', label: 'Leaks' }}>
         <div className="actions"><a className="btn primary" href="#products">See all products</a></div>
       </Page>
     );
@@ -163,7 +163,7 @@ export function Product({ id }: { id: string }) {
   };
 
   return (
-    <Page title={title} lead={lead} back={{ href: '#audit', label: 'Audit' }}>
+    <Page title={title} lead={lead} back={{ href: '#audit', label: 'Leaks' }}>
       <Issues issues={issues} />
 
       {shown && (
