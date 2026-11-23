@@ -1,9 +1,8 @@
-import ArrowUp02Icon from '@hugeicons/core-free-icons/ArrowUp02Icon';
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import DiscountTag01Icon from '@hugeicons/core-free-icons/DiscountTag01Icon';
 import DropletIcon from '@hugeicons/core-free-icons/DropletIcon';
 import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
-import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
-import ShieldCheckIcon from '@hugeicons/core-free-icons/ShieldCheckIcon';
 import SquareLock02Icon from '@hugeicons/core-free-icons/SquareLock02Icon';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Discount, VariantAudit } from '../../../../packages/core/src/types.ts';
@@ -20,43 +19,51 @@ interface Result {
 }
 
 const perItem = (v: VariantAudit) => (v.worst!.net - v.worst!.cost) / v.worst!.qty;
+const LEDGER_ROWS = 5;
 
-function Suggestions() {
+/** The answer first: what in this store is losing money right now. */
+function Ledger() {
   const { data, money } = useApp();
   const leaks = data.audit.variants.filter((v) => v.state === 'leak').sort((a, b) => perItem(a) - perItem(b));
   const unknown = data.audit.variants.filter((v) => v.state === 'unknown');
-  const cards = leaks.slice(0, unknown.length ? 2 : 3);
+  const rows = [...leaks, ...unknown];
+  const shown = rows.slice(0, LEDGER_ROWS);
+
+  if (!rows.length) {
+    return (
+      <a className="row" href="#products">
+        <Icon icon={CheckmarkCircle02Icon} />
+        <span className="body">
+          <strong>{plural(data.audit.counts.clear_in_model, { one: '{n} product checked', other: '{n} products checked' })}</strong>
+          <span className="caption muted">No stack in this audit sells below cost</span>
+        </span>
+        <span className="end"><Icon icon={ArrowRight01Icon} /></span>
+      </a>
+    );
+  }
 
   return (
-    <div className="suggestions">
-      {cards.map((v) => (
-        <a className="suggestion leak" href={productHref(v.id)} key={v.id}>
-          <Icon icon={DropletIcon} />
-          <strong>{v.title} loses {money(v.worst!.cost - v.worst!.net)}</strong>
-          <span className="sub muted">See why, and fix it</span>
-        </a>
+    <ul className="ledger" aria-label="Losing money now">
+      {shown.map((v) => (
+        <li key={v.id}>
+          <a className={`ledger-row ${v.state}`} href={productHref(v.id)}>
+            <Icon icon={v.state === 'leak' ? DropletIcon : HelpCircleIcon} />
+            <span className="body">
+              <strong>{v.state === 'leak' ? `${v.title} loses ${money(v.worst!.cost - v.worst!.net)}` : v.title}</strong>
+              <span className="caption muted">
+                {v.state === 'leak'
+                  ? v.worst!.stack.length ? <span className="code">{v.worst!.stack.join(' + ')}</span> : 'Priced below cost'
+                  : v.unknown[0] === 'missing_cost' ? 'Add a cost to check it' : 'Can’t be sure yet'}
+              </span>
+            </span>
+            <span className="end caption">{v.state === 'leak' ? 'See why, and fix it' : 'Check'}<Icon icon={ArrowRight01Icon} size={16} /></span>
+          </a>
+        </li>
       ))}
-      {unknown.length > 0 && (
-        <a className="suggestion unknown" href={unknown.length === 1 ? productHref(unknown[0].id) : '#audit'}>
-          <Icon icon={HelpCircleIcon} />
-          <strong>
-            {unknown.length === 1 ? unknown[0].title : plural(unknown.length, { one: '{n} product', other: '{n} products' })}
-          </strong>
-          <span className="sub muted">
-            {unknown.every((v) => v.unknown[0] === 'missing_cost') ? 'Add a cost to check it' : 'Can’t be sure yet'}
-          </span>
-        </a>
+      {rows.length > shown.length && (
+        <li><a className="ledger-more" href="#audit">See all {rows.length}</a></li>
       )}
-      {cards.length + (unknown.length ? 1 : 0) < 3 && (
-        <a className="suggestion" href="#products">
-          <Icon icon={CheckmarkCircle02Icon} />
-          <strong>
-            {plural(data.audit.counts.clear_in_model, { one: '{n} product with no leak', other: '{n} products with no leak' })}
-          </strong>
-          <span className="sub muted">See every product</span>
-        </a>
-      )}
-    </div>
+    </ul>
   );
 }
 
@@ -115,51 +122,53 @@ export function Home() {
   const check = result?.check;
 
   return (
-    <div className="hero">
-      <div className="intro">
-        <span className="trust">
-          <Icon icon={ShieldCheckIcon} size={15} />
-          Discount stacks checked on your device
-        </span>
-        <h1 tabIndex={-1}>What are you launching next?</h1>
-        <p className="muted">Describe a promotion. See whether it would sell anything below cost before it goes live.</p>
-      </div>
+    <div className="home">
+      <header className="home-head">
+        <p className="eyebrow">
+          {data.app.settings.storeName} · {plural(data.store.variants.length, { one: '{n} product', other: '{n} products' })} · {plural(data.store.discounts.length, { one: '{n} discount', other: '{n} discounts' })}{data.app.sample ? ' · Sample data' : ''}
+        </p>
+        <h1 tabIndex={-1}>
+          {data.audit.counts.leak
+            ? plural(data.audit.counts.leak, { one: '{n} product sells below cost', other: '{n} products sell below cost' })
+            : 'No leak found in this audit'}
+        </h1>
+        <p className="muted">
+          {data.audit.counts.leak
+            ? 'When these discounts stack at checkout, the order earns less than the product cost.'
+            : 'Check your next promotion before it goes live.'}
+        </p>
+      </header>
 
-      <form className="section" onSubmit={submit}>
-        <div className="composer">
-          <div className="composer-input">
-            <Icon icon={Search01Icon} />
-            <label className="sr" htmlFor="promotion">Describe a promotion</label>
-            <textarea
-              id="promotion"
-              name="promotion"
-              ref={box}
-              value={text}
-              rows={3}
-              autoComplete="off"
-              placeholder={`20% off winter, or free shipping over ${money(5000)}`}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? 'promotion-error' : undefined}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-            />
-          </div>
-          <div className="composer-foot">
-            <span className="composer-pill">
-              <Icon icon={SquareLock02Icon} size={16} />
-              Costs never leave this device
-            </span>
-            <button className="btn primary round" type="submit" aria-label="Check promotion" aria-disabled={busy || undefined}>
-              <Icon icon={ArrowUp02Icon} size={20} strong />
-            </button>
-          </div>
+      <Ledger />
+
+      <form className="launch" onSubmit={submit}>
+        <h2 className="launch-title">Check a promotion before it goes live</h2>
+        <div className="launch-field">
+          <Icon icon={DiscountTag01Icon} />
+          <label className="sr" htmlFor="promotion">Describe a promotion</label>
+          <textarea
+            id="promotion"
+            name="promotion"
+            ref={box}
+            value={text}
+            rows={1}
+            autoComplete="off"
+            placeholder={`20% off winter, or free shipping over ${money(5000)}`}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'promotion-error' : 'promotion-note'}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <button className="btn primary" type="submit" aria-disabled={busy || undefined}>Check promotion</button>
         </div>
-        {error && <p className="error" id="promotion-error">{error}</p>}
+        {error
+          ? <p className="error" id="promotion-error">{error}</p>
+          : <p className="caption muted launch-note" id="promotion-note"><Icon icon={SquareLock02Icon} size={14} />Checked on this device. Costs never leave it.</p>}
       </form>
 
       <Issues issues={issues} />
@@ -213,16 +222,7 @@ export function Home() {
             />
           </Disclosure>
         </div>
-      ) : (
-        <>
-          <Suggestions />
-          <ul className="dots" aria-label="This audit">
-            <li>{plural(data.store.variants.length, { one: '{n} product', other: '{n} products' })}</li>
-            <li>{plural(data.store.discounts.length, { one: '{n} discount', other: '{n} discounts' })}</li>
-            <li>{data.app.sample ? 'Sample data' : 'Nothing uploaded'}</li>
-          </ul>
-        </>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -108,6 +108,6 @@ Design, code, tests and documentation were written with significant help from Cl
 
 ## License
 
-Code is [MIT](LICENSE). Images in `docs/design/inspiration` are third-party references and are not covered by that license.
+Code is [MIT](LICENSE).
 
 StackLeak is not affiliated with or endorsed by Neo4j or Shopify.

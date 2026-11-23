@@ -2,16 +2,14 @@
 
 | Source | What it decides |
 |---|---|
-| [inspiration/app-branding-colors.webp](inspiration/app-branding-colors.webp) | Every brand color, sampled pixel by pixel, plus the glow and the dashed guide |
-| [inspiration/dashboard-layout.webp](inspiration/dashboard-layout.webp) | Layout, measured: window, seams, sidebar, top bar, segmented switch, centered prompt, three cards, dots |
 | [tokens.css](../../apps/web/src/tokens.css) | The only place values are defined |
 | [REVIEW.md](REVIEW.md) | The interface review of the built app |
 
-The two images are third-party references. Their names, logos, copy and artwork are not used in the product.
+The palette and window layout began from mood-board references, which are not part of this repository. The home screen, mark and copy are original.
 
 ## Principles
 
-1. **One question per screen.** Home: is this promotion safe to launch? Audit: what is losing money? Product: why, and how do I fix it?
+1. **One question per screen.** Home: what is losing money now, and is the next promotion safe to launch? Audit: what is losing money? Product: why, and how do I fix it?
 2. **Answer first.** The title is the answer ("Winter jacket loses $5.00"). Proof, queries and options sit behind named disclosures.
 3. **Money reads as a receipt.** Nobody has to read a chart to understand a loss.
 4. **One column, one filled button.**
