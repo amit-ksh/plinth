@@ -21,6 +21,21 @@ It opens on a synthetic sample store, with no account, key or upload. Add `?demo
 2. Select **Preview fix**, then **Add to checklist**.
 3. Go **Home** and type `70% off winter` to check a promotion before it exists.
 
+## Connect a Shopify store
+
+On the live app, open **Import**, enter the store address and select **Connect Shopify**. Shopify asks for read-only access to products, inventory costs and discounts. The Worker in [`apps/web/worker`](apps/web/worker) checks Shopify's signature and a one-time state cookie, trades the code for a short-lived online token, reads the store once and hands the mapped data to the browser. It stores nothing: the token and the data exist only for that one request, and the audit runs in your browser as before.
+
+For agencies and AI agents, the same reader runs from the command line and writes a directory store for the MCP server:
+
+```bash
+SHOPIFY_STORE=my-shop SHOPIFY_TOKEN=shpat_... npm run shopify:import -- data/my-shop
+npm run mcp -- data/my-shop
+```
+
+The token needs `read_products`, `read_discounts` and `read_inventory`. The mapping is in [`packages/core/src/shopify.ts`](packages/core/src/shopify.ts) and is tested against data read from a real Plus development store. Buy X Get Y, minimum-quantity and app discounts import as "Can't be sure". Gift cards are skipped. Customer eligibility is ignored, so every discount is assumed available to every buyer.
+
+Installing on stores outside the developer's Shopify organization needs the app's distribution set in the Shopify Dev Dashboard, and App Store review for a public listing.
+
 ## Use case
 
 Each promotion in a store can be profitable alone. A 20% product discount, a 15% welcome code and free shipping together turn a $100 jacket that costs $65 into a $60 sale. Plinth is for merchants and agencies who need to find those stacks before a sale goes live.
@@ -75,6 +90,7 @@ Point the server at `data/store`.
 ## Where the data lives
 
 - [`demo/store`](demo/store) is a persistent Relate directory store with 50 synthetic variants and 12 discounts. Inspect it with `npm run demo:audit`. `.gitattributes` marks it binary, because Relate cannot open it if Git rewrites its line endings.
+- A Shopify connection passes through the Worker in memory and is never stored there.
 - The browser app saves to two OPFS stores on the device. A save finishes in the idle one before switching, so an interrupted save loses nothing.
 
 ## Develop
@@ -99,8 +115,8 @@ Native Relate (tests, `demo:audit`, MCP) on Linux needs glibc 2.39 or later, suc
 
 ## Limits
 
-- The pricing and combination rules match a real Shopify Plus development store on 13 carts, including both demo leaks (`packages/core/test/shopify-golden.ts`). Still unverified: shipping thresholds at checkout, several order discounts together, mixed fixed and percent discounts on one line, and stores without Plus. There is no Shopify connection yet.
-- One product per cart. Taxes, payment fees, markets, segments, Functions and Buy X Get Y are not modeled. Unsupported discounts show as "Can't be sure".
+- The pricing and combination rules match a real Shopify Plus development store on 13 carts, including both demo leaks (`packages/core/test/shopify-golden.ts`). Still unverified: shipping thresholds at checkout, several order discounts together, mixed fixed and percent discounts on one line, and stores without Plus. The connection reads; it never changes anything in Shopify.
+- One product per cart. Taxes, payment fees, markets, segments, Functions, minimum quantities and Buy X Get Y are not modeled. Unsupported discounts show as "Can't be sure".
 - Searches stop at eight discounts in a stack and say so.
 - Tested in Edge and Chrome on Windows. Other browsers are untested.
 

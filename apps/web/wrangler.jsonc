@@ -1,10 +1,19 @@
-// Cloudflare static hosting for the built app. Deploy with `npm run deploy` from the repository root.
+// Cloudflare hosting: static app plus the Shopify connection Worker (worker/index.ts).
+// Deploy with `npm run deploy` from the repository root. The client secret is a Worker secret:
+//   npx wrangler secret put SHOPIFY_API_SECRET
 {
   "$schema": "https://unpkg.com/wrangler@4.166.0/config-schema.json",
   "name": "plinth",
+  "main": "./worker/index.ts",
   "compatibility_date": "2026-11-19",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    // Public: Shopify shows it in every install link.
+    "SHOPIFY_API_KEY": "0c8a016afa272e5125eb501c840bb124"
   }
 }

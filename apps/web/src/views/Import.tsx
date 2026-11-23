@@ -1,6 +1,7 @@
 import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { DISCOUNTS_TEMPLATE, PRODUCTS_TEMPLATE } from '../../../../packages/core/src/csv.ts';
+import type { Currency } from '../../../../packages/core/src/format.ts';
 import type { StoreInput } from '../../../../packages/core/src/types.ts';
 import { useApp } from '../context.ts';
 import { call, explainError } from '../engine.ts';
@@ -9,6 +10,74 @@ import { Disclosure, download, Icon, Issues, Page, plural } from '../ui.tsx';
 interface Preview {
   store: StoreInput;
   missingCost: number;
+  /** Set when the store came from Shopify. */
+  shop?: string;
+  currency?: Currency | null;
+  notes?: string[];
+}
+
+/** Set at build time for hosts that run the Worker in apps/web/worker. */
+const SHOPIFY_CONNECT = import.meta.env.VITE_SHOPIFY_CONNECT === '1';
+const HANDOFF = 'plinth-shopify';
+
+/** Reads, once, what the Worker's callback page left for this tab. */
+function takeHandoff(): { error?: string; preview?: Preview; storeName?: string } | null {
+  try {
+    const text = sessionStorage.getItem(HANDOFF);
+    if (!text) return null;
+    sessionStorage.removeItem(HANDOFF);
+    const data = JSON.parse(text);
+    if (typeof data?.error === 'string') return { error: data.error };
+    if (!data?.store) return { error: 'Plinth couldn’t read what Shopify sent. Connect again.' };
+    return {
+      storeName: data.storeName,
+      preview: { store: data.store, missingCost: data.missingCost ?? 0, shop: data.shop, currency: data.currency, notes: Array.isArray(data.notes) ? data.notes : [] },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function ConnectShopify() {
+  const [shop, setShop] = useState('');
+  const [error, setError] = useState('');
+  return (
+    <form
+      className="card form"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const name = shop.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/\.myshopify\.com$/, '');
+        if (!/^[a-z0-9][a-z0-9-]{0,59}$/.test(name)) {
+          setError('Enter your store’s address, like my-shop or my-shop.myshopify.com');
+          document.getElementById('shopify-shop')?.focus();
+          return;
+        }
+        location.assign(`/api/shopify/start?shop=${encodeURIComponent(name)}`);
+      }}
+    >
+      <h2>Connect Shopify</h2>
+      <p className="muted">Read-only. Plinth reads products, costs and discounts once, then audits them in this browser. Nothing is kept on a server.</p>
+      <div className="field">
+        <label htmlFor="shopify-shop">Store address</label>
+        <input
+          id="shopify-shop"
+          name="shop"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="my-shop.myshopify.com"
+          value={shop}
+          onChange={(e) => setShop(e.target.value)}
+          aria-invalid={!!error || undefined}
+          aria-describedby={error ? 'shopify-shop-error' : undefined}
+        />
+        {error && <p className="error" id="shopify-shop-error">{error}</p>}
+      </div>
+      <div className="actions">
+        <button className="btn primary" type="submit">Connect Shopify</button>
+      </div>
+    </form>
+  );
 }
 
 export function Import() {
@@ -20,6 +89,15 @@ export function Import() {
   const [issues, setIssues] = useState<string[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const previewTitle = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    const handoff = takeHandoff();
+    if (handoff?.error) setIssues([handoff.error]);
+    if (handoff?.preview) {
+      if (handoff.storeName) setName(handoff.storeName);
+      setPreview(handoff.preview);
+    }
+  }, []);
 
   useEffect(() => {
     if (preview) previewTitle.current?.focus();
@@ -54,7 +132,7 @@ export function Import() {
   };
 
   if (preview) {
-    const { store, missingCost } = preview;
+    const { store, missingCost, shop, notes = [], currency } = preview;
     const counts = [
       plural(store.variants.length, { one: '{n} product', other: '{n} products' }),
       plural(store.discounts.length, { one: '{n} discount', other: '{n} discounts' }),
@@ -63,6 +141,7 @@ export function Import() {
       <Page title="Import your store">
         <div className="card">
           <h2 tabIndex={-1} ref={previewTitle}>Ready to import {counts.join(' and ')}</h2>
+          {shop && <p>Read from <span className="code">{shop}</span> just now.</p>}
           {missingCost > 0 && (
             <p>
               {plural(missingCost, {
@@ -71,12 +150,17 @@ export function Import() {
               })}
             </p>
           )}
+          {notes.length > 0 && (
+            <ul className="notes">
+              {notes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          )}
           <p className="muted">This replaces {data.app.settings.storeName} in this browser. You can undo it.</p>
           <div className="actions">
             <button
               className="btn primary"
               onClick={async () => {
-                if (await change(() => call('useImport', store, name), 'Store imported and audited')) location.hash = 'audit';
+                if (await change(() => call('useImport', store, name, currency ?? null), 'Store imported and audited')) location.hash = 'audit';
               }}
             >
               Replace and audit
@@ -89,9 +173,11 @@ export function Import() {
   }
 
   return (
-    <Page title="Import your store" lead="Two spreadsheet files. Nothing is uploaded.">
+    <Page title="Import your store" lead={SHOPIFY_CONNECT ? 'Connect Shopify, or use two spreadsheet files.' : 'Two spreadsheet files. Nothing is uploaded.'}>
       <Issues issues={issues} />
+      {SHOPIFY_CONNECT && <ConnectShopify />}
       <form className="card form" onSubmit={review} noValidate>
+        {SHOPIFY_CONNECT && <h2>Use spreadsheets</h2>}
         <div className="field">
           <label htmlFor="import-name">Store name</label>
           <input id="import-name" name="storeName" autoComplete="organization" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!errors.name || undefined} aria-describedby={errors.name ? 'import-name-error' : undefined} />

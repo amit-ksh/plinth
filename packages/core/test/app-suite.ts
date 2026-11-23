@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  applyChanges, audit, breakdown, defaultState, explainStack, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
+  applyChanges, audit, breakdown, defaultState, explainStack, fromShopify, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
   netRevenue, parseCsv, parseMoney, parsePercent, parsePromotion, PRODUCTS_TEMPLATE, queries, readStore, SAMPLE_SCENARIO,
   SAMPLE_STORE, suggestFixes, Workspace,
   type Discount, type Driver, type StoreInput,
@@ -303,6 +304,31 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
       const net = netRevenue(cart.applied.map((id) => discount.get(id)!), v.price, cart.qty, 0);
       assert.equal(net, cart.total, `${cart.name}: total`);
     }
+  });
+
+  test(`${name}: a real Shopify store imports and shows the same two leaks`, async () => {
+    const result = fromShopify(JSON.parse(readFileSync(new URL('./shopify-fixture.json', import.meta.url), 'utf8')));
+    assert.equal(result.storeName, 'plinth-test');
+    assert.equal(result.currency, 'USD');
+    assert.equal(result.store.plus, true);
+    assert.ok(result.notes.some((n) => n.includes('Buy X Get Y')));
+    assert.ok(result.notes.some((n) => n.includes('gift card')));
+    const byTitle = new Map(result.store.variants.map((v) => [v.title, v]));
+    assert.equal(byTitle.get('Winter jacket')!.cost, 6500);
+    assert.equal(byTitle.get('Gift box')!.cost, null);
+    assert.ok([...byTitle.keys()].every((t) => !t.startsWith('Gift Card')));
+    const vip = result.store.discounts.find((d) => d.id === 'VIP25')!;
+    assert.deepEqual([vip.tags, vip.acceptsTags], [['vip'], ['boots', 'flash']]);
+
+    const audited = audit(await loaded(result.store), SAMPLE_SCENARIO);
+    const leaks = audited.variants.filter((v) => v.state === 'leak');
+    const loss = (title: string) => {
+      const v = leaks.find((l) => l.title === title)!;
+      return v.worst!.cost - v.worst!.net;
+    };
+    assert.deepEqual(leaks.map((v) => v.title).sort(), ['Leather boots', 'Winter jacket']);
+    assert.equal(loss('Winter jacket'), 500);
+    assert.equal(loss('Leather boots'), 200);
   });
 
   test(`${name}: a store with no app node still opens`, async () => {

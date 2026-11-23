@@ -3,6 +3,7 @@ import { checkSettings, checkState, defaultState, type AppState, type Settings }
 import { importCsv } from './csv.ts';
 import { applyChanges, changeId, suggestFixes, type Change, type Fix } from './fixes.ts';
 import { breakdown, type ReceiptLine } from './money.ts';
+import type { Currency } from './format.ts';
 import { PRODUCT_NAME } from './product.ts';
 import { parsePromotion, type PromotionParse } from './promotion.ts';
 import * as Q from './queries.ts';
@@ -229,8 +230,8 @@ export class Workspace {
     return { store, missingCost: store.variants.filter((v) => v.cost === null).length };
   }
 
-  useImport(store: StoreInput, storeName: string): Snapshot {
-    const settings = { ...this.app.settings, storeName: storeName.trim() };
+  useImport(store: StoreInput, storeName: string, currency?: Currency | null): Snapshot {
+    const settings = { ...this.app.settings, storeName: storeName.trim(), ...(currency ? { currency } : {}) };
     checkSettings(settings);
     return this.commit(store, { settings, checklist: [], sample: false });
   }

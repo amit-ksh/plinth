@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json",
-    "test": "npm run test:oracle && npm run test:native && npm run test:wasm && npm run test:app && npm run test:store && npm run test:mcp",
+    "test": "npm run test:oracle && npm run test:native && npm run test:wasm && npm run test:app && npm run test:store && npm run test:mcp && npm run test:worker",
     "test:oracle": "node --experimental-strip-types --no-warnings --test packages/core/test/oracle.selftest.ts",
     "test:native": "node --experimental-strip-types --no-warnings --test packages/core/test/engine.native.test.ts",
     "test:wasm": "node --experimental-strip-types --no-warnings --test packages/core/test/engine.wasm.test.ts",
@@ -29,7 +29,9 @@
     "mcp": "node --experimental-strip-types --no-warnings apps/mcp/server.ts",
     "test:e2e": "node --experimental-strip-types --no-warnings scripts/e2e.ts",
     "start": "npm run build && npm run preview",
-    "deploy": "npm run build && cd apps/web && npx --yes wrangler@4.166.0 deploy"
+    "deploy": "npm run build:hosted -w @app/web && cd apps/web && npx --yes wrangler@4.166.0 deploy",
+    "shopify:import": "node --experimental-strip-types --no-warnings scripts/shopify-import.ts",
+    "test:worker": "node --experimental-strip-types --no-warnings --test apps/web/worker/oauth.test.ts"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

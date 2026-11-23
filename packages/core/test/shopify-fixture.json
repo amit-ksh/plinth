@@ -1,0 +1,1383 @@
+{
+  "shop": {
+    "name": "plinth-test",
+    "myshopifyDomain": "example-store.myshopify.com",
+    "currencyCode": "USD",
+    "plan": {
+      "shopifyPlus": true
+    }
+  },
+  "products": [
+    {
+      "id": "gid://shopify/Product/10820196466981",
+      "title": "The Inventory Not Tracked Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/snowboard_purple_hydrogen_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629720869",
+            "title": "Home page"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916301093",
+            "title": "Default Title",
+            "sku": "sku-untracked-1",
+            "price": "949.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196499749",
+      "title": "Gift Card",
+      "isGiftCard": true,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/gift_card_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614915973413",
+            "title": "$10",
+            "sku": null,
+            "price": "10.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916006181",
+            "title": "$25",
+            "sku": null,
+            "price": "25.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916038949",
+            "title": "$50",
+            "sku": null,
+            "price": "50.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916071717",
+            "title": "$100",
+            "sku": null,
+            "price": "100.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196565285",
+      "title": "The Compare at Price Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/snowboard_sky_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916268325",
+            "title": "Default Title",
+            "sku": null,
+            "price": "785.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196598053",
+      "title": "The Minimal Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614915907877",
+            "title": "Default Title",
+            "sku": null,
+            "price": "885.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196663589",
+      "title": "The Videographer Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916137253",
+            "title": "Default Title",
+            "sku": null,
+            "price": "885.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196696357",
+      "title": "The Out of Stock Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_f44a9605-cd62-464d-b095-d45cdaa0d0d7_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614915940645",
+            "title": "Default Title",
+            "sku": null,
+            "price": "885.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196729125",
+      "title": "Selling Plans Ski Wax",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/snowboard_wax_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916170021",
+            "title": "Selling Plans Ski Wax",
+            "sku": null,
+            "price": "24.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916202789",
+            "title": "Special Selling Plans Ski Wax",
+            "sku": null,
+            "price": "49.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916235557",
+            "title": "Sample Selling Plans Ski Wax",
+            "sku": null,
+            "price": "9.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196761893",
+      "title": "The Hidden Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_c8ff0b5d-c712-429a-be00-b29bd55cbc9d_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916530469",
+            "title": "Default Title",
+            "sku": null,
+            "price": "749.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196794661",
+      "title": "The Collection Snowboard: Hydrogen",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_0a40b01b-5021-48c1-80d1-aa8ab4876d3d_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          },
+          {
+            "id": "gid://shopify/Collection/665629819173",
+            "title": "Hydrogen"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916104485",
+            "title": "Default Title",
+            "sku": null,
+            "price": "600.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196827429",
+      "title": "The Complete Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_589fc064-24a2-4236-9eaf-13b2bd35d21d_96x96.jpg?v=1795409422"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916366629",
+            "title": "Ice",
+            "sku": null,
+            "price": "699.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916399397",
+            "title": "Dawn",
+            "sku": null,
+            "price": "699.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916432165",
+            "title": "Powder",
+            "sku": null,
+            "price": "699.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916464933",
+            "title": "Electric",
+            "sku": null,
+            "price": "699.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54614916497701",
+            "title": "Sunset",
+            "sku": null,
+            "price": "699.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196925733",
+      "title": "The Multi-location Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_0a4e9096-021a-4c1e-8750-24b233166a12_96x96.jpg?v=1795409423"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916759845",
+            "title": "Default Title",
+            "sku": null,
+            "price": "729.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196958501",
+      "title": "The Multi-managed Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_9129b69a-0c7b-4f66-b6cf-c4222f18028a_96x96.jpg?v=1795409423"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916825381",
+            "title": "Default Title",
+            "sku": "sku-managed-1",
+            "price": "629.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820196991269",
+      "title": "The 3p Fulfilled Snowboard",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_b9e0da7f-db89-4d41-83f0-7f417b02831d_96x96.jpg?v=1795409423"
+          }
+        }
+      },
+      "collections": {
+        "nodes": []
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916858149",
+            "title": "Default Title",
+            "sku": "sku-hosted-1",
+            "price": "2629.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820197024037",
+      "title": "The Collection Snowboard: Oxygen",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_d624f226-0a89-4fe1-b333-0d1548b43c06_96x96.jpg?v=1795409423"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629819173",
+            "title": "Hydrogen"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614916890917",
+            "title": "Default Title",
+            "sku": null,
+            "price": "1025.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820197122341",
+      "title": "The Collection Snowboard: Liquid",
+      "isGiftCard": false,
+      "featuredMedia": {
+        "preview": {
+          "image": {
+            "url": "https://cdn.shopify.com/s/files/1/1036/1307/1653/files/Main_b13ad453-477c-4ed1-9b43-81f3345adfd6_96x96.jpg?v=1795409425"
+          }
+        }
+      },
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665629786405",
+            "title": "Automated Collection"
+          },
+          {
+            "id": "gid://shopify/Collection/665629819173",
+            "title": "Hydrogen"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614917021989",
+            "title": "Default Title",
+            "sku": null,
+            "price": "749.95",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820235526437",
+      "title": "Winter jacket",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665630277925",
+            "title": "Winter"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614974103845",
+            "title": "Default Title",
+            "sku": null,
+            "price": "100.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": {
+                "amount": "65.0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820235624741",
+      "title": "Leather boots",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665630310693",
+            "title": "Footwear"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614974202149",
+            "title": "Default Title",
+            "sku": null,
+            "price": "100.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": {
+                "amount": "62.0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820235755813",
+      "title": "Gift box",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665630343461",
+            "title": "Home"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614974333221",
+            "title": "Default Title",
+            "sku": null,
+            "price": "45.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820235886885",
+      "title": "Wool cap",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665630376229",
+            "title": "Accessories"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614974464293",
+            "title": "Default Title",
+            "sku": null,
+            "price": "30.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": {
+                "amount": "10.0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10820236017957",
+      "title": "Knitwear item 1",
+      "isGiftCard": false,
+      "featuredMedia": null,
+      "collections": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Collection/665630408997",
+            "title": "Knitwear"
+          }
+        ]
+      },
+      "variants": {
+        "pageInfo": {
+          "hasNextPage": false
+        },
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54614974890277",
+            "title": "Default Title",
+            "sku": null,
+            "price": "60.00",
+            "image": null,
+            "inventoryItem": {
+              "unitCost": {
+                "amount": "15.0"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "discounts": [
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704204566821",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "CODE_DISCOUNT_BLACKFRIDAY",
+        "startsAt": "2026-11-27T00:00:00Z",
+        "endsAt": "2026-11-28T00:00:00Z",
+        "discountClasses": [
+          "ORDER"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": null
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "CODE_DISCOUNT_BLACKFRIDAY"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.8
+          },
+          "items": {
+            "__typename": "AllDiscountItems",
+            "allItems": true
+          }
+        },
+        "minimumRequirement": {
+          "__typename": "DiscountMinimumQuantity"
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704204599589",
+      "discount": {
+        "__typename": "DiscountCodeFreeShipping",
+        "title": "FREESHIPPING2026",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": "2026-12-31T23:59:59Z",
+        "discountClasses": [
+          "SHIPPING"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": null
+        },
+        "codes": {
+          "nodes": [
+            {
+              "code": "FREESHIPPING2026"
+            }
+          ]
+        },
+        "minimumRequirement": {
+          "__typename": "DiscountMinimumQuantity"
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountAutomaticNode/1704204632357",
+      "discount": {
+        "__typename": "DiscountAutomaticBxgy",
+        "title": "Buy one, get the second 10 percent off",
+        "startsAt": "2026-12-08T00:00:00Z",
+        "endsAt": "2026-12-23T00:00:00Z",
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704204665125",
+      "discount": {
+        "__typename": "DiscountCodeBxgy",
+        "title": "CODE_BXGY_DISCOUNT_SUMMERBOGO",
+        "startsAt": "2027-06-01T00:00:00Z",
+        "endsAt": "2027-07-31T00:00:00Z",
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "codes": {
+          "nodes": [
+            {
+              "code": "CODE_BXGY_DISCOUNT_SUMMERBOGO"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountAutomaticNode/1704204697893",
+      "discount": {
+        "__typename": "DiscountAutomaticBasic",
+        "title": "Buy three, get 30 percent off",
+        "startsAt": "2026-11-23T00:00:00Z",
+        "endsAt": "2026-12-03T00:00:00Z",
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.3
+          },
+          "items": {
+            "__typename": "DiscountProducts",
+            "products": {
+              "nodes": []
+            },
+            "productVariants": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/ProductVariant/54614916366629"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": {
+          "__typename": "DiscountMinimumQuantity"
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206401829",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "BUNDLE20",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": true,
+          "shippingDiscounts": true,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "BUNDLE20"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.2
+          },
+          "items": {
+            "__typename": "DiscountCollections",
+            "collections": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Collection/665630277925"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206467365",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "WELCOME15",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "ORDER"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": false,
+          "shippingDiscounts": true,
+          "productDiscountsWithTagsOnSameCartLine": null
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "WELCOME15"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.15
+          },
+          "items": {
+            "__typename": "AllDiscountItems",
+            "allItems": true
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206500133",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "BOOT20",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": [
+            "vip"
+          ]
+        },
+        "tags": [
+          "boots"
+        ],
+        "codes": {
+          "nodes": [
+            {
+              "code": "BOOT20"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.2
+          },
+          "items": {
+            "__typename": "DiscountProducts",
+            "products": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Product/10820235624741"
+                }
+              ]
+            },
+            "productVariants": {
+              "nodes": []
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206532901",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "VIP25",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": [
+            "boots",
+            "flash"
+          ]
+        },
+        "tags": [
+          "vip"
+        ],
+        "codes": {
+          "nodes": [
+            {
+              "code": "VIP25"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.25
+          },
+          "items": {
+            "__typename": "DiscountProducts",
+            "products": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Product/10820235624741"
+                }
+              ]
+            },
+            "productVariants": {
+              "nodes": []
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206565669",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "FLASH10",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": [
+            "vip"
+          ]
+        },
+        "tags": [
+          "flash"
+        ],
+        "codes": {
+          "nodes": [
+            {
+              "code": "FLASH10"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.1
+          },
+          "items": {
+            "__typename": "DiscountProducts",
+            "products": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Product/10820235624741"
+                }
+              ]
+            },
+            "productVariants": {
+              "nodes": []
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206598437",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "KNIT10",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": true,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "KNIT10"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.1
+          },
+          "items": {
+            "__typename": "DiscountCollections",
+            "collections": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Collection/665630408997"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206631205",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "HOME15",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": true,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "HOME15"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.15
+          },
+          "items": {
+            "__typename": "DiscountCollections",
+            "collections": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Collection/665630343461"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206663973",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "EXTRAS10",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "EXTRAS10"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountPercentage",
+            "percentage": 0.1
+          },
+          "items": {
+            "__typename": "DiscountCollections",
+            "collections": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Collection/665630376229"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206696741",
+      "discount": {
+        "__typename": "DiscountCodeBasic",
+        "title": "SOCKS2",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "PRODUCT"
+        ],
+        "combinesWith": {
+          "productDiscounts": false,
+          "orderDiscounts": false,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": []
+        },
+        "tags": [],
+        "codes": {
+          "nodes": [
+            {
+              "code": "SOCKS2"
+            }
+          ]
+        },
+        "customerGets": {
+          "value": {
+            "__typename": "DiscountAmount",
+            "amount": {
+              "amount": "2.0"
+            },
+            "appliesOnEachItem": true
+          },
+          "items": {
+            "__typename": "DiscountCollections",
+            "collections": {
+              "nodes": [
+                {
+                  "id": "gid://shopify/Collection/665630310693"
+                }
+              ]
+            }
+          }
+        },
+        "minimumRequirement": null
+      }
+    },
+    {
+      "id": "gid://shopify/DiscountCodeNode/1704206729509",
+      "discount": {
+        "__typename": "DiscountCodeFreeShipping",
+        "title": "FREESHIP",
+        "startsAt": "2026-01-01T00:00:00Z",
+        "endsAt": null,
+        "discountClasses": [
+          "SHIPPING"
+        ],
+        "combinesWith": {
+          "productDiscounts": true,
+          "orderDiscounts": true,
+          "shippingDiscounts": false,
+          "productDiscountsWithTagsOnSameCartLine": null
+        },
+        "codes": {
+          "nodes": [
+            {
+              "code": "FREESHIP"
+            }
+          ]
+        },
+        "minimumRequirement": {
+          "__typename": "DiscountMinimumSubtotal",
+          "greaterThanOrEqualToSubtotal": {
+            "amount": "50.0"
+          }
+        }
+      }
+    }
+  ],
+  "truncated": false
+}

@@ -6,6 +6,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# Not secret: turns on the Connect Shopify card in the hosted build
+!apps/web/.env.hosted
 *.tsbuildinfo
 .DS_Store
 /data/

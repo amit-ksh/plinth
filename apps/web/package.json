@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 4173 --strictPort"
+    "preview": "vite preview --port 4173 --strictPort",
+    "build:hosted": "vite build --mode hosted"
   },
   "devDependencies": {
     "@types/react": "19.2.2",

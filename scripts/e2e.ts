@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright-core';
 import { DISCOUNTS_TEMPLATE, PRODUCTS_TEMPLATE } from '../packages/core/src/csv.ts';
+import { fromShopify } from '../packages/core/src/shopify.ts';
 import { serve } from './static-server.ts';
 
 const root = resolve(import.meta.dirname, '..');
@@ -327,6 +328,29 @@ try {
     await page.locator('#restore').setInputFiles({ name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(backup) });
     await toast('Backup restored');
     await heading('2 products sell below cost');
+  });
+
+  await step('a Shopify connection hands its store to Import, which audits it', async () => {
+    // The Worker's callback page leaves this in session storage. Images are dropped so the test makes no outside requests.
+    const result = fromShopify(JSON.parse(readFileSync(join(root, 'packages/core/test/shopify-fixture.json'), 'utf8')));
+    const store = { ...result.store, variants: result.store.variants.map(({ image: _image, ...v }) => v) };
+    const payload = JSON.stringify({ shop: 'example-store.myshopify.com', ...result, store });
+    await page.evaluate((text) => sessionStorage.setItem('plinth-shopify', text), payload);
+    await go('import');
+    await heading('Ready to import 25 products and 15 discounts');
+    await page.getByText('example-store.myshopify.com').waitFor();
+    await page.getByText(/Buy X Get Y/).waitFor();
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('plinth-shopify')), null);
+    await button('Replace and audit');
+    await heading('2 products sell below cost');
+    await page.locator('.store-card', { hasText: 'plinth-test' }).waitFor();
+  });
+
+  await step('a refused Shopify connection explains itself', async () => {
+    await page.evaluate(() => sessionStorage.setItem('plinth-shopify', JSON.stringify({ error: 'Shopify access wasn’t approved, so nothing was read.' })));
+    await go('home');
+    await go('import');
+    await page.getByText('Shopify access wasn’t approved').waitFor();
   });
 
   await step('templates and the agent copy download', async () => {

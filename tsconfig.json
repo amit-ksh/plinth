@@ -23,6 +23,7 @@
     "packages/*/src",
     "packages/*/test",
     "scripts",
-    "apps/mcp"
+    "apps/mcp",
+    "apps/web/worker"
   ]
 }
