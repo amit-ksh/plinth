@@ -1,5 +1,7 @@
 import { audit, explainStack } from './audit.ts';
-import { checkSettings, checkState, defaultState, type AppState, type Settings } from './app-state.ts';
+import {
+  checkSettings, checkState, defaultState, HISTORY_LIMIT, type AppState, type HistoryAction, type HistoryEntry, type Settings, type ShopifyLink,
+} from './app-state.ts';
 import { importCsv } from './csv.ts';
 import { applyChanges, changeId, suggestFixes, type Change, type Fix } from './fixes.ts';
 import { breakdown, type ReceiptLine } from './money.ts';
@@ -56,6 +58,37 @@ export interface PromotionCheck {
   checked: number;
 }
 
+/** How a change was saved: written to Shopify first (with the discount's Shopify ID after), or only here. */
+export interface SaveOptions {
+  action?: HistoryAction;
+  where?: 'shopify' | 'local';
+  gid?: string | null;
+}
+
+export interface CalendarSegment {
+  start: number;
+  end: number;
+  active: string[];
+  leaks: { id: string; title: string; loss: number; stack: string[] }[];
+  unknown: number;
+}
+
+export interface Calendar {
+  start: number;
+  end: number;
+  discounts: { id: string; title: string; class: Discount['class']; method: Discount['method']; starts: number | null; ends: number | null; supported: boolean }[];
+  segments: CalendarSegment[];
+  /** Set when there were more distinct sets of live discounts than were audited. */
+  truncated: boolean;
+}
+
+export interface RollbackPlan {
+  kind: 'create' | 'update' | 'delete';
+  discount: Discount;
+  current: Discount | null;
+}
+
+const CALENDAR_SETS = 40;
 const BACKUP_FORMAT = 'discount-audit';
 
 export class Workspace {
@@ -162,7 +195,17 @@ export class Workspace {
     if (this.store.discounts.some((d) => d.id === discount.id)) {
       throw new InputError([`${discount.id} is already a discount. Use a different code`]);
     }
-    const draft = { ...this.store, discounts: [...this.store.discounts, discount] };
+    return this.checkDiscount(discount);
+  }
+
+  /**
+   * The guard before a save: which products this discount, as edited, would help sell below cost.
+   * Runs in a scratch graph; the saved graph is never touched.
+   */
+  checkDiscount(discount: Discount, originalId?: string): PromotionCheck {
+    const others = this.store.discounts.filter((d) => d.id !== originalId);
+    if (others.some((d) => d.id === discount.id)) throw new InputError([`${discount.id} is already a discount. Use a different code`]);
+    const draft = { ...this.store, discounts: [...others, discount] };
     validate(draft);
     const db = this.persistence.scratch();
     loadStore(db, draft);
@@ -175,22 +218,134 @@ export class Workspace {
         .flatMap((v) => (v.focus ? [{ id: v.id, title: v.title, outcome: v.focus }] : []))
         .sort((a, b) => a.outcome.net - a.outcome.cost - (b.outcome.net - b.outcome.cost)),
       newlyUnknown: after.variants
-        .filter((v) => v.unknown.some((reason) => !before.get(v.id)!.unknown.includes(reason)))
+        .filter((v) => v.unknown.some((reason) => !before.get(v.id)?.unknown.includes(reason)))
         .map((v) => ({ id: v.id, title: v.title, reasons: v.unknown })),
     };
   }
 
-  saveDiscount(discount: Discount, originalId?: string): Snapshot {
+  private recorded(app: AppState, entries: Omit<HistoryEntry, 'id' | 'at' | 'rolledBack'>[], link?: ShopifyLink | null): AppState {
+    const at = this.now();
+    const made = entries.map((e, i) => ({ ...e, id: `${at.toString(36)}-${(app.history.length + i).toString(36)}`, at, rolledBack: false }));
+    return { ...app, history: [...app.history, ...made].slice(-HISTORY_LIMIT), shopify: link === undefined ? app.shopify : link };
+  }
+
+  /** The Shopify ID map after a discount was saved, renamed or deleted. `gid` undefined means unchanged. */
+  private relinked(oldId: string | null, newId: string | null, gid: string | null | undefined): ShopifyLink | null {
+    const link = this.app.shopify;
+    if (!link || gid === undefined) return link;
+    const discounts = { ...link.discounts };
+    if (oldId) delete discounts[oldId];
+    if (newId && gid) discounts[newId] = gid;
+    return { ...link, discounts };
+  }
+
+  saveDiscount(discount: Discount, originalId?: string, options: SaveOptions = {}): Snapshot {
     const { discounts } = this.store;
     if (discount.id !== originalId && discounts.some((d) => d.id === discount.id)) {
       throw new InputError([`${discount.id} is already a discount. Use a different code`]);
     }
+    const before = originalId ? discounts.find((d) => d.id === originalId) ?? null : null;
+    if (originalId && !before) throw new InputError([`${originalId} is no longer in this audit`]);
     const next = originalId ? discounts.map((d) => (d.id === originalId ? discount : d)) : [...discounts, discount];
-    return this.commit({ ...this.store, discounts: next }, this.app);
+    const app = this.recorded(
+      this.app,
+      [{ action: options.action ?? (before ? 'update' : 'create'), discount: discount.id, before, after: discount, where: options.where ?? 'local' }],
+      this.relinked(originalId ?? null, discount.id, options.gid),
+    );
+    return this.commit({ ...this.store, discounts: next }, app);
   }
 
-  deleteDiscount(id: string): Snapshot {
-    return this.commit({ ...this.store, discounts: this.store.discounts.filter((d) => d.id !== id) }, this.app);
+  deleteDiscount(id: string, options: SaveOptions = {}): Snapshot {
+    const before = this.store.discounts.find((d) => d.id === id);
+    if (!before) throw new InputError([`${id} is no longer in this audit`]);
+    const link = this.relinked(id, null, options.where === 'shopify' ? null : undefined);
+    const app = this.recorded(this.app, [{ action: 'delete', discount: id, before, after: null, where: options.where ?? 'local' }], link);
+    return this.commit({ ...this.store, discounts: this.store.discounts.filter((d) => d.id !== id) }, app);
+  }
+
+  /** What undoing a history entry means for the discount as it is now. */
+  rollbackPlan(entryId: string): RollbackPlan {
+    const entry = this.app.history.find((e) => e.id === entryId);
+    if (!entry) throw new InputError(['That change is no longer in the history']);
+    if (entry.rolledBack) throw new InputError(['That change was already rolled back']);
+    const currentId = entry.after?.id ?? entry.discount;
+    const current = this.store.discounts.find((d) => d.id === currentId) ?? null;
+    if (entry.after && (!current || JSON.stringify(current) !== JSON.stringify(entry.after))) {
+      throw new InputError([`${currentId} was changed again since, so roll back the later change first`]);
+    }
+    if (!entry.before) return { kind: 'delete', discount: current!, current };
+    if (!current) {
+      if (this.store.discounts.some((d) => d.id === entry.before!.id)) throw new InputError([`${entry.before.id} already exists, so this can’t be restored`]);
+      return { kind: 'create', discount: entry.before, current: null };
+    }
+    return { kind: 'update', discount: entry.before, current };
+  }
+
+  /** Puts the discount back the way it was before a change. When connected, write to Shopify first. */
+  rollback(entryId: string, options: SaveOptions = {}): Snapshot {
+    const plan = this.rollbackPlan(entryId);
+    const where = options.where ?? 'local';
+    const discounts =
+      plan.kind === 'delete'
+        ? this.store.discounts.filter((d) => d.id !== plan.current!.id)
+        : plan.kind === 'create'
+          ? [...this.store.discounts, plan.discount]
+          : this.store.discounts.map((d) => (d.id === plan.current!.id ? plan.discount : d));
+    const marked = { ...this.app, history: this.app.history.map((e) => (e.id === entryId ? { ...e, rolledBack: true } : e)) };
+    const gid = where === 'shopify' && plan.kind === 'delete' ? null : options.gid;
+    const link = this.relinked(plan.current?.id ?? null, plan.kind === 'delete' ? null : plan.discount.id, gid);
+    const entry = { action: 'rollback' as const, discount: plan.discount.id, before: plan.current, after: plan.kind === 'delete' ? null : plan.discount, where };
+    return this.commit({ ...this.store, discounts }, this.recorded(marked, [entry], link));
+  }
+
+  /**
+   * The next weeks, stretch by stretch: which discounts are live, and which products lose money then.
+   * Each distinct set of live discounts is audited once, with the others disabled.
+   */
+  calendar(days = 42): Calendar {
+    if (!Number.isSafeInteger(days) || days < 1 || days > 120) throw new InputError(['Show from 1 to 120 days']);
+    const today = new Date(this.now());
+    today.setHours(0, 0, 0, 0);
+    const start = today.getTime();
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + days).getTime();
+    const ds = this.store.discounts;
+    const cuts = new Set([start, end]);
+    for (const d of ds) for (const t of [d.starts, d.ends]) if (t !== null && t > start && t < end) cuts.add(t);
+    const points = [...cuts].sort((a, b) => a - b);
+
+    const cache = new Map<string, Omit<CalendarSegment, 'start' | 'end' | 'active'>>();
+    let truncated = false;
+    const segments: CalendarSegment[] = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const at = points[i];
+      const active = ds.filter((d) => (d.starts === null || d.starts <= at) && (d.ends === null || d.ends > at)).map((d) => d.id);
+      const key = active.join('|');
+      let found = cache.get(key);
+      if (!found) {
+        if (cache.size >= CALENDAR_SETS) {
+          truncated = true;
+          break;
+        }
+        const live = new Set(active);
+        const result = audit(this.db, { ...this.scenario(), asOf: undefined, disabled: ds.filter((d) => !live.has(d.id)).map((d) => d.id) });
+        found = {
+          leaks: result.variants
+            .filter((v) => v.state === 'leak')
+            .map((v) => ({ id: v.id, title: v.title, loss: v.worst!.cost - v.worst!.net, stack: v.worst!.stack }))
+            .sort((a, b) => b.loss - a.loss),
+          unknown: result.counts.unknown,
+        };
+        cache.set(key, found);
+      }
+      segments.push({ start: at, end: points[i + 1], active, ...found });
+    }
+    return {
+      start,
+      end,
+      discounts: ds.map(({ id, title, class: cls, method, starts, ends, supported }) => ({ id, title, class: cls, method, starts, ends, supported })),
+      segments,
+      truncated,
+    };
   }
 
   setCost(id: string, cost: number | null): Snapshot {
@@ -218,11 +373,16 @@ export class Workspace {
   }
 
   /** The merchant made the change in Shopify, so this copy of the settings follows. */
-  completeChecklistItem(id: string): Snapshot {
+  completeChecklistItem(id: string, options: SaveOptions = {}): Snapshot {
     const item = this.app.checklist.find((i) => i.id === id && !i.done);
     if (!item) throw new InputError(['That checklist item is already done']);
     const checklist = this.app.checklist.map((i) => (i === item ? { ...i, done: true } : i));
-    return this.commit(applyChanges(this.store, item.changes, this.now()), { ...this.app, checklist });
+    const next = applyChanges(this.store, item.changes, this.now());
+    const changed = next.discounts.flatMap((after) => {
+      const before = this.store.discounts.find((d) => d.id === after.id)!;
+      return JSON.stringify(before) === JSON.stringify(after) ? [] : [{ action: 'fix' as const, discount: after.id, before, after, where: options.where ?? 'local' }];
+    });
+    return this.commit(next, this.recorded({ ...this.app, checklist }, changed));
   }
 
   readCsv(files: { products: string; discounts: string }, plus: boolean) {
@@ -230,10 +390,18 @@ export class Workspace {
     return { store, missingCost: store.variants.filter((v) => v.cost === null).length };
   }
 
-  useImport(store: StoreInput, storeName: string, currency?: Currency | null): Snapshot {
+  useImport(store: StoreInput, storeName: string, currency?: Currency | null, shopify?: ShopifyLink | null): Snapshot {
     const settings = { ...this.app.settings, storeName: storeName.trim(), ...(currency ? { currency } : {}) };
     checkSettings(settings);
-    return this.commit(store, { settings, checklist: [], sample: false });
+    const link = shopify ? checkState({ ...defaultState(false), shopify }).shopify : null;
+    return this.commit(store, { settings, checklist: [], sample: false, history: [], shopify: link });
+  }
+
+  /** New data from Shopify for the same store: keeps settings, checklist and history. */
+  refreshFromShopify(store: StoreInput, shopify: ShopifyLink): Snapshot {
+    if (!this.app.shopify || this.app.shopify.shop !== shopify.shop) throw new InputError(['This is a different store. Use Import to replace the audit']);
+    const link = checkState({ ...defaultState(false), shopify }).shopify;
+    return this.commit(store, { ...this.app, shopify: link });
   }
 
   resetSample(): Snapshot {

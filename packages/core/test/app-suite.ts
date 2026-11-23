@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  applyChanges, audit, breakdown, defaultState, explainStack, fromShopify, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
+  applyChanges, audit, breakdown, defaultState, explainStack, fromShopify, TEMPLATES, DISCOUNTS_TEMPLATE, formatMoney, importCsv, InputError, loadStore,
   netRevenue, parseCsv, parseMoney, parsePercent, parsePromotion, PRODUCTS_TEMPLATE, queries, readStore, SAMPLE_SCENARIO,
   SAMPLE_STORE, suggestFixes, Workspace,
   type Discount, type Driver, type StoreInput,
@@ -329,6 +329,95 @@ export function runAppSuite(name: string, open: () => Promise<Driver>): void {
     assert.deepEqual(leaks.map((v) => v.title).sort(), ['Leather boots', 'Winter jacket']);
     assert.equal(loss('Winter jacket'), 500);
     assert.equal(loss('Leather boots'), 200);
+  });
+
+  test(`${name}: the guard names the products an edit would put below cost`, async () => {
+    const w = await workspace();
+    const knit = w.snapshot().store.discounts.find((d) => d.id === 'KNIT10')!;
+    assert.deepEqual(w.checkDiscount(knit, 'KNIT10').leaks, []);
+    const deep = { ...knit, bps: 8000 };
+    const check = w.checkDiscount(deep, 'KNIT10');
+    assert.ok(check.leaks.length > 0 && check.leaks.every((l) => l.id.startsWith('knitwear')));
+    assert.throws(() => w.checkDiscount({ ...knit, id: 'BUNDLE20' }, 'KNIT10'), InputError);
+    // Checking never saves.
+    assert.equal(w.snapshot().store.discounts.find((d) => d.id === 'KNIT10')!.bps, 1000);
+  });
+
+  test(`${name}: every change is in the history and can be rolled back`, async () => {
+    const w = await workspace();
+    const before = w.snapshot().store;
+    const knit = before.discounts.find((d) => d.id === 'KNIT10')!;
+    w.saveDiscount({ ...knit, bps: 3000 }, 'KNIT10');
+    w.saveDiscount({ ...knit, id: 'NEW5', title: 'New', bps: 500 });
+    w.deleteDiscount('EXTRAS10');
+    let history = w.snapshot().app.history;
+    assert.deepEqual(history.map((e) => [e.action, e.discount]), [['update', 'KNIT10'], ['create', 'NEW5'], ['delete', 'EXTRAS10']]);
+
+    // A change made again since can't be rolled back out of order.
+    w.saveDiscount({ ...knit, bps: 3500 }, 'KNIT10');
+    assert.throws(() => w.rollbackPlan(history[0].id), /changed again/);
+
+    history = w.snapshot().app.history;
+    for (const entry of [...history].reverse()) w.rollback(entry.id);
+    const after = w.snapshot();
+    assert.deepEqual(after.store.discounts.map((d) => d.id).sort(), before.discounts.map((d) => d.id).sort());
+    assert.equal(after.store.discounts.find((d) => d.id === 'KNIT10')!.bps, 1000);
+    assert.ok(after.app.history.slice(0, 4).every((e) => e.rolledBack));
+    assert.throws(() => w.rollback(history[0].id), /already rolled back/);
+
+    // History survives a backup and restore, and old backups without it still load.
+    const restored = (await workspace()).restore(w.backup());
+    assert.equal(restored.app.history.length, after.app.history.length);
+    const old = JSON.parse(w.backup());
+    delete old.app.history;
+    delete old.app.shopify;
+    assert.deepEqual((await workspace()).restore(JSON.stringify(old)).app.history, []);
+  });
+
+  test(`${name}: a checklist fix is recorded so it can be rolled back`, async () => {
+    const w = await workspace();
+    const fix = w.product('boots').fixes[0];
+    w.addToChecklist(fix.changes, 'Leather boots');
+    const snap = w.completeChecklistItem(w.snapshot().app.checklist[0].id);
+    const entry = snap.app.history.at(-1)!;
+    assert.equal(entry.action, 'fix');
+    assert.equal(snap.audit.variants.find((v) => v.id === 'boots')!.state === 'leak', false);
+    assert.equal(w.rollback(entry.id).audit.variants.find((v) => v.id === 'boots')!.state, 'leak');
+  });
+
+  test(`${name}: the calendar shows a scheduled sale's leak only on its days`, async () => {
+    const w = await workspace();
+    const day = 86_400_000;
+    const start = new Date(NOW);
+    start.setHours(0, 0, 0, 0);
+    const opens = start.getTime() + 4 * day;
+    const closes = opens + 3 * day;
+    // 40% off winter, stacking with WELCOME15's order class, only for three days.
+    w.saveDiscount({ ...w.snapshot().store.discounts.find((d) => d.id === 'BUNDLE20')!, id: 'BFCM40', title: 'BFCM', bps: 4000, starts: opens, ends: closes });
+    const cal = w.calendar(14);
+    const during = cal.segments.find((s) => s.start === opens)!;
+    const outside = cal.segments.find((s) => s.start === cal.start)!;
+    assert.ok(during.active.includes('BFCM40') && !outside.active.includes('BFCM40'));
+    const jacket = (s: typeof during) => s.leaks.find((l) => l.id === 'jacket')!.loss;
+    assert.ok(jacket(during) > jacket(outside), 'the sale deepens the jacket loss on its days');
+    assert.equal(cal.segments.at(-1)!.end, cal.end);
+    assert.throws(() => w.calendar(0), InputError);
+  });
+
+  test(`${name}: every template builds a valid discount, and the guard checks it`, async () => {
+    const w = await workspace();
+    const store = w.snapshot().store;
+    for (const t of TEMPLATES) {
+      const d = t.build(store);
+      assert.ok(!store.discounts.some((x) => x.id === d.id), t.id);
+      w.checkDiscount(d);
+    }
+    const clearance = { ...TEMPLATES.find((t) => t.id === 'clearance')!.build(store), collections: ['winter'] };
+    assert.ok(w.checkDiscount(clearance).leaks.some((l) => l.id === 'jacket'), 'a 40% clearance on winter sells the jacket below cost');
+    const sitewide = TEMPLATES.find((t) => t.id === 'sitewide')!.build(store);
+    assert.deepEqual(w.checkDiscount(sitewide).leaks, [], 'a 25% sitewide sale that combines with shipping only is safe here');
+    {
+    }
   });
 
   test(`${name}: a store with no app node still opens`, async () => {

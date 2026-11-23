@@ -249,6 +249,35 @@ input[type="file"]::file-selector-button { min-height: 32px; margin-inline-end: 
 .status.off { color: var(--color-text-secondary); }
 .status.unknown { color: var(--color-warning-text); }
 
+/* Templates */
+.templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); }
+.template { display: grid; align-content: start; gap: 6px; width: 100%; height: 100%; padding: var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-bg-raised); color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.template strong { font-weight: 600; }
+.template:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+
+/* Calendar */
+.calendar-summary { display: flex; align-items: center; gap: var(--space-2); font-weight: 500; }
+.calendar-summary.leak { color: var(--color-danger-text); }
+.timeline-scroll { overflow-x: auto; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-bg-raised); }
+.timeline { display: grid; align-items: center; gap: 4px 2px; min-width: max-content; padding: var(--space-3) var(--space-4); font-size: var(--text-caption); }
+.tl-corner, .tl-label { position: sticky; left: 0; z-index: 1; padding-inline-end: var(--space-3); background: var(--color-bg-raised); white-space: nowrap; }
+.tl-label { color: var(--color-text-secondary); }
+.tl-day { min-height: 20px; white-space: nowrap; color: var(--color-text-secondary); }
+.tl-day.week { border-inline-start: 1px solid var(--color-border-subtle); padding-inline-start: 4px; }
+.tl-risk { display: grid; place-items: center; height: 22px; border-radius: 4px; background: var(--color-bg-sunken); font-weight: 600; }
+.tl-risk.leak { background: var(--color-danger-subtle); color: var(--color-danger-text); box-shadow: inset 0 0 0 1px var(--color-danger-border); }
+.tl-bar { overflow: hidden; height: 24px; padding: 3px 8px; border-radius: 999px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; }
+.tl-bar.product { background: var(--sage-100); color: var(--forest-900); }
+.tl-bar.order { background: var(--cream-200); color: var(--ink-600); }
+.tl-bar.shipping { background: var(--sage-50); color: var(--forest-800); box-shadow: inset 0 0 0 1px var(--sage-500); }
+.tl-bar.unsure { background: var(--color-warning-subtle); color: var(--color-warning-text); }
+.stretches { display: grid; gap: var(--space-2); }
+.stretch { display: grid; gap: var(--space-2); padding: 12px var(--space-4) 12px calc(var(--space-4) - 3px); border: 1px solid var(--color-border-subtle); border-inline-start: 3px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-bg-raised); }
+.stretch.leak { border-inline-start-color: var(--color-danger-border); }
+.stretch-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px var(--space-3); }
+.nowrap { white-space: nowrap; }
+.table .end-cell { text-align: end; white-space: nowrap; }
+
 /* Pages: one centered column */
 .page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); width: 100%; max-width: var(--width-page); margin-inline: auto; padding-block: var(--space-4) var(--space-12); }
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }
@@ -307,7 +336,7 @@ pre { margin: 0; padding: var(--space-3); border-radius: var(--radius-control); 
 @media (hover: hover) {
   .nav a:not([aria-current]):hover, .menu button:hover, .menu a:hover, .btn:not(.primary):hover, a.row:hover, button.row:hover { background: var(--color-bg-hover); }
   .btn.primary:hover { background: var(--color-accent-solid-hover); }
-  .ledger-row:hover, .ledger-more:hover, .table tbody tr:hover { background: var(--color-bg-hover); }
+  .ledger-row:hover, .ledger-more:hover, .table tbody tr:hover, .template:hover { background: var(--color-bg-hover); }
 }
 @media (prefers-reduced-motion: no-preference) {
   .btn:not(:disabled, [aria-disabled="true"]):active { scale: 0.96; }

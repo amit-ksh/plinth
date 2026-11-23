@@ -49,3 +49,38 @@ export function scriptJson(value: unknown): string {
     .replace(new RegExp(String.fromCharCode(0x2028), 'g'), `${BACKSLASH}u2028`)
     .replace(new RegExp(String.fromCharCode(0x2029), 'g'), `${BACKSLASH}u2029`);
 }
+
+const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64 = (text: string) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+
+async function sessionKey(secret: string): Promise<CryptoKey> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`plinth-session-v1:${secret}`));
+  return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+export interface Session {
+  shop: string;
+  token: string;
+  /** Epoch milliseconds. */
+  expires: number;
+}
+
+/** Encrypts the session for an HttpOnly cookie, so the browser holds it but can't read the token. */
+export async function sealSession(session: Session, secret: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await sessionKey(secret), new TextEncoder().encode(JSON.stringify(session)));
+  return `${b64(iv)}.${b64(new Uint8Array(data))}`;
+}
+
+export async function openSession(sealed: string | null, secret: string, now = Date.now()): Promise<Session | null> {
+  if (!sealed || !secret) return null;
+  try {
+    const [iv, data] = sealed.split('.');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, await sessionKey(secret), unb64(data));
+    const session = JSON.parse(new TextDecoder().decode(plain)) as Session;
+    if (typeof session.shop !== 'string' || typeof session.token !== 'string' || !(session.expires > now)) return null;
+    return session;
+  } catch {
+    return null;
+  }
+}

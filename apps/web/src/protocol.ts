@@ -5,6 +5,7 @@ export const METHODS = [
   'snapshot', 'product', 'parsePromotion', 'checkPromotion', 'saveDiscount', 'deleteDiscount', 'setCost',
   'saveSettings', 'addToChecklist', 'removeFromChecklist', 'completeChecklistItem', 'readCsv', 'useImport',
   'resetSample', 'undo', 'backup', 'restore', 'report',
+  'checkDiscount', 'rollbackPlan', 'rollback', 'calendar', 'refreshFromShopify',
 ] as const satisfies readonly (keyof Workspace)[];
 
 export type Method = (typeof METHODS)[number];

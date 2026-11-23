@@ -31,3 +31,15 @@ test('cookies and embedded JSON are read and written safely', () => {
   assert.ok(!json.includes('</script>'));
   assert.deepEqual(JSON.parse(json), { title: '</script><script>alert(1)</script>' });
 });
+
+test('sessions are sealed, tamper-proof and expire', async () => {
+  const { sealSession, openSession } = await import('./oauth.ts');
+  const session = { shop: 'my-shop.myshopify.com', token: 'shpua_secret', expires: Date.now() + 60_000 };
+  const sealed = await sealSession(session, 'k1');
+  assert.ok(!sealed.includes('shpua_secret'));
+  assert.deepEqual(await openSession(sealed, 'k1'), session);
+  assert.equal(await openSession(sealed, 'k2'), null);
+  assert.equal(await openSession(sealed.slice(0, -2) + 'AA', 'k1'), null);
+  assert.equal(await openSession(sealed, 'k1', session.expires + 1), null);
+  assert.equal(await openSession('garbage', 'k1'), null);
+});

@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import { parseMoney, parsePercent } from '../../../packages/core/src/format.ts';
 import type { Discount, DiscountClass, StoreInput } from '../../../packages/core/src/types.ts';
-import { editable, useApp } from './context.ts';
+import { editable, endField, fromEndField, fromStartField, startField, useApp } from './context.ts';
 import { Disclosure, plural } from './ui.tsx';
 
 export function amountOf(d: Discount, money: (minor: number) => string): string {
@@ -66,7 +66,9 @@ export function DiscountForm({ initial, submitLabel, onSubmit }: {
   const [combines, setCombines] = useState(initial.combinesWith);
   const [tags, setTags] = useState(initial.tags.join(', '));
   const [accepts, setAccepts] = useState(initial.acceptsTags.join(', '));
-  const [errors, setErrors] = useState<{ code?: string; value?: string; minimum?: string }>({});
+  const [starts, setStarts] = useState(startField(initial.starts));
+  const [ends, setEnds] = useState(endField(initial.ends));
+  const [errors, setErrors] = useState<{ code?: string; value?: string; minimum?: string; starts?: string; ends?: string }>({});
 
   const id = (name: string) => `${uid}-${name}`;
   const described = (name: keyof typeof errors, hint?: string) =>
@@ -81,6 +83,11 @@ export function DiscountForm({ initial, submitLabel, onSubmit }: {
     if (!/^[A-Za-z0-9_./:-]{1,128}$/.test(code.trim())) found.code = 'Use letters, numbers, - or _, with no spaces';
     if (amount === null) found.value = kind === 'percent' ? 'Enter a percentage from 0 to 100, like 20' : 'Enter an amount like 10.00';
     if (least === null) found.minimum = 'Enter an amount like 50.00, or leave it empty';
+    const startAt = fromStartField(starts);
+    const endAt = fromEndField(ends);
+    if (startAt === undefined) found.starts = 'Choose a date, or leave it empty to start now';
+    if (endAt === undefined) found.ends = 'Choose a date, or leave it empty to run with no end';
+    else if (endAt !== null && startAt && endAt <= startAt) found.ends = 'Choose an end on or after the start';
     setErrors(found);
 
     const first = Object.keys(found)[0];
@@ -114,6 +121,9 @@ export function DiscountForm({ initial, submitLabel, onSubmit }: {
       combinesWith: combines,
       tags: splitTags(tags),
       acceptsTags: splitTags(accepts),
+      starts: startAt ?? null,
+      // An unchanged end keeps its exact time, so a Shopify end at 3pm isn't moved to midnight.
+      ends: ends === endField(initial.ends) ? initial.ends : endAt ?? null,
     });
   };
 
@@ -169,6 +179,16 @@ export function DiscountForm({ initial, submitLabel, onSubmit }: {
           <label htmlFor={id('minimum')}>Minimum spend (optional)</label>
           <input id={id('minimum')} name="minimum" inputMode="decimal" autoComplete="off" placeholder="50.00" value={minimum} onChange={(e) => setMinimum(e.target.value)} aria-invalid={!!errors.minimum || undefined} aria-describedby={described('minimum')} />
           {errors.minimum && <p className="error" id={id('minimum-error')}>{errors.minimum}</p>}
+        </div>
+        <div className="field">
+          <label htmlFor={id('starts')}>Starts (optional)</label>
+          <input id={id('starts')} name="starts" type="date" value={starts} onChange={(e) => setStarts(e.target.value)} aria-invalid={!!errors.starts || undefined} aria-describedby={described('starts', 'starts-hint')} />
+          {errors.starts ? <p className="error" id={id('starts-error')}>{errors.starts}</p> : <p className="hint" id={id('starts-hint')}>Empty starts it now.</p>}
+        </div>
+        <div className="field">
+          <label htmlFor={id('ends')}>Last day (optional)</label>
+          <input id={id('ends')} name="ends" type="date" value={ends} onChange={(e) => setEnds(e.target.value)} aria-invalid={!!errors.ends || undefined} aria-describedby={described('ends', 'ends-hint')} />
+          {errors.ends ? <p className="error" id={id('ends-error')}>{errors.ends}</p> : <p className="hint" id={id('ends-hint')}>It runs through the end of this day.</p>}
         </div>
       </div>
 

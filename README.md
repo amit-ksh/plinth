@@ -21,9 +21,23 @@ It opens on a synthetic sample store, with no account, key or upload. Add `?demo
 2. Select **Preview fix**, then **Add to checklist**.
 3. Go **Home** and type `70% off winter` to check a promotion before it exists.
 
+## Manage discounts
+
+Plinth is where discounts are planned, created and changed, with a leak check in front of every save.
+
+| Screen | What you do there |
+|---|---|
+| **Discounts** | Every discount with what it takes off, what it reaches, what it combines with, how many leaks it's in, and whether it's active, scheduled or ended |
+| **Add a discount** | Start from a template (sitewide sale, collection sale, welcome code, VIP extra, spend more and save, free shipping, clearance), each with combination settings chosen so it can't stack into a loss by itself, or start from scratch |
+| **Leak guard** | Before any save, the change is audited in a scratch graph. If it would sell anything below cost, Plinth names the products and the stacks; you change it or save anyway |
+| **Calendar** | The next six weeks: which discounts are live each day and how many products lose money on each stretch, with a scheduled sale's leaks shown only on its days |
+| **History** | Every change with the full discount before and after, where it was saved, and a rollback for the latest change to each discount |
+
+When the audit is linked to a Shopify store, saves, ends, deletes and rollbacks are written to Shopify first, and only recorded locally if Shopify accepts them. Otherwise they change this audit only.
+
 ## Connect a Shopify store
 
-On the live app, open **Import**, enter the store address and select **Connect Shopify**. Shopify asks for read-only access to products, inventory costs and discounts. The Worker in [`apps/web/worker`](apps/web/worker) checks Shopify's signature and a one-time state cookie, trades the code for a short-lived online token, reads the store once and hands the mapped data to the browser. It stores nothing: the token and the data exist only for that one request, and the audit runs in your browser as before.
+On the live app, open **Import**, enter the store address and select **Connect Shopify**. Shopify asks for access to read products and inventory costs and to manage discounts. The Worker in [`apps/web/worker`](apps/web/worker) checks Shopify's signature and a one-time state cookie, trades the code for a short-lived online token, reads the store and hands the mapped data to the browser. The token is kept only in an encrypted, HttpOnly cookie that expires with it; the Worker stores nothing. Discount writes go through a fixed set of mutations in [`packages/core/src/shopify-write.ts`](packages/core/src/shopify-write.ts), checked against a real store with `npm run shopify:check-writes`.
 
 For agencies and AI agents, the same reader runs from the command line and writes a directory store for the MCP server:
 
@@ -32,7 +46,7 @@ SHOPIFY_STORE=my-shop SHOPIFY_TOKEN=shpat_... npm run shopify:import -- data/my-
 npm run mcp -- data/my-shop
 ```
 
-The token needs `read_products`, `read_discounts` and `read_inventory`. The mapping is in [`packages/core/src/shopify.ts`](packages/core/src/shopify.ts) and is tested against data read from a real Plus development store. Buy X Get Y, minimum-quantity and app discounts import as "Can't be sure". Gift cards are skipped. Customer eligibility is ignored, so every discount is assumed available to every buyer.
+The token needs `read_products`, `read_discounts` and `read_inventory` (the hosted app asks for `write_discounts` instead of `read_discounts`, so it can save changes). The mapping is in [`packages/core/src/shopify.ts`](packages/core/src/shopify.ts) and is tested against data read from a real Plus development store. Buy X Get Y, minimum-quantity and app discounts import as "Can't be sure". Gift cards are skipped. Customer eligibility is ignored, so every discount is assumed available to every buyer.
 
 Installing on stores outside the developer's Shopify organization needs the app's distribution set in the Shopify Dev Dashboard, and App Store review for a public listing.
 
@@ -90,7 +104,8 @@ Point the server at `data/store`.
 ## Where the data lives
 
 - [`demo/store`](demo/store) is a persistent Relate directory store with 50 synthetic variants and 12 discounts. Inspect it with `npm run demo:audit`. `.gitattributes` marks it binary, because Relate cannot open it if Git rewrites its line endings.
-- A Shopify connection passes through the Worker in memory and is never stored there.
+- Store data from Shopify passes through the Worker in memory and is never stored there. The access token lives only in an encrypted HttpOnly cookie that expires with it.
+- Discount history (each change, before and after) is saved with the audit in the browser and in backups.
 - The browser app saves to two OPFS stores on the device. A save finishes in the idle one before switching, so an interrupted save loses nothing.
 
 ## Develop
@@ -115,7 +130,7 @@ Native Relate (tests, `demo:audit`, MCP) on Linux needs glibc 2.39 or later, suc
 
 ## Limits
 
-- The pricing and combination rules match a real Shopify Plus development store on 13 carts, including both demo leaks (`packages/core/test/shopify-golden.ts`). Still unverified: shipping thresholds at checkout, several order discounts together, mixed fixed and percent discounts on one line, and stores without Plus. The connection reads; it never changes anything in Shopify.
+- The pricing and combination rules match a real Shopify Plus development store on 13 carts, including both demo leaks (`packages/core/test/shopify-golden.ts`). Still unverified: shipping thresholds at checkout, several order discounts together, mixed fixed and percent discounts on one line, and stores without Plus. Plinth changes discounts in Shopify only when you save one; it never changes products, prices or costs.
 - One product per cart. Taxes, payment fees, markets, segments, Functions, minimum quantities and Buy X Get Y are not modeled. Unsupported discounts show as "Can't be sure".
 - Searches stop at eight discounts in a stack and say so.
 - Tested in Edge and Chrome on Windows. Other browsers are untested.

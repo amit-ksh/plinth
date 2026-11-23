@@ -1,9 +1,11 @@
 import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { DISCOUNTS_TEMPLATE, PRODUCTS_TEMPLATE } from '../../../../packages/core/src/csv.ts';
+import type { ShopifyLink } from '../../../../packages/core/src/app-state.ts';
 import type { Currency } from '../../../../packages/core/src/format.ts';
 import type { StoreInput } from '../../../../packages/core/src/types.ts';
 import { useApp } from '../context.ts';
+import { connectShopify, SHOPIFY_CONNECT } from '../shopify.ts';
 import { call, explainError } from '../engine.ts';
 import { Disclosure, download, Icon, Issues, Page, plural } from '../ui.tsx';
 
@@ -14,10 +16,9 @@ interface Preview {
   shop?: string;
   currency?: Currency | null;
   notes?: string[];
+  link?: ShopifyLink | null;
 }
 
-/** Set at build time for hosts that run the Worker in apps/web/worker. */
-const SHOPIFY_CONNECT = import.meta.env.VITE_SHOPIFY_CONNECT === '1';
 const HANDOFF = 'plinth-shopify';
 
 /** Reads, once, what the Worker's callback page left for this tab. */
@@ -31,7 +32,7 @@ function takeHandoff(): { error?: string; preview?: Preview; storeName?: string 
     if (!data?.store) return { error: 'Plinth couldn’t read what Shopify sent. Connect again.' };
     return {
       storeName: data.storeName,
-      preview: { store: data.store, missingCost: data.missingCost ?? 0, shop: data.shop, currency: data.currency, notes: Array.isArray(data.notes) ? data.notes : [] },
+      preview: { store: data.store, missingCost: data.missingCost ?? 0, shop: data.shop, currency: data.currency, notes: Array.isArray(data.notes) ? data.notes : [], link: data.link ?? null },
     };
   } catch {
     return null;
@@ -53,11 +54,11 @@ function ConnectShopify() {
           document.getElementById('shopify-shop')?.focus();
           return;
         }
-        location.assign(`/api/shopify/start?shop=${encodeURIComponent(name)}`);
+        connectShopify(name);
       }}
     >
       <h2>Connect Shopify</h2>
-      <p className="muted">Read-only. Plinth reads products, costs and discounts once, then audits them in this browser. Nothing is kept on a server.</p>
+      <p className="muted">Plinth reads your products, costs and discounts, and audits them in this browser. Discount changes you make here are checked for leaks, then saved to Shopify. Nothing is kept on a server.</p>
       <div className="field">
         <label htmlFor="shopify-shop">Store address</label>
         <input
@@ -132,7 +133,8 @@ export function Import() {
   };
 
   if (preview) {
-    const { store, missingCost, shop, notes = [], currency } = preview;
+    const { store, missingCost, shop, notes = [], currency, link } = preview;
+    const sameStore = SHOPIFY_CONNECT && !!link && data.app.shopify?.shop === link.shop;
     const counts = [
       plural(store.variants.length, { one: '{n} product', other: '{n} products' }),
       plural(store.discounts.length, { one: '{n} discount', other: '{n} discounts' }),
@@ -155,15 +157,20 @@ export function Import() {
               {notes.map((note) => <li key={note}>{note}</li>)}
             </ul>
           )}
-          <p className="muted">This replaces {data.app.settings.storeName} in this browser. You can undo it.</p>
+          {sameStore ? (
+            <p className="muted">This updates {data.app.settings.storeName} with what’s in Shopify now. Your settings, checklist and history stay.</p>
+          ) : (
+            <p className="muted">This replaces {data.app.settings.storeName} in this browser. You can undo it.</p>
+          )}
           <div className="actions">
             <button
               className="btn primary"
               onClick={async () => {
-                if (await change(() => call('useImport', store, name, currency ?? null), 'Store imported and audited')) location.hash = 'audit';
+                const work = sameStore ? () => call('refreshFromShopify', store, link!) : () => call('useImport', store, name, currency ?? null, SHOPIFY_CONNECT ? link ?? null : null);
+                if (await change(work, sameStore ? 'Updated from Shopify and audited' : 'Store imported and audited')) location.hash = 'audit';
               }}
             >
-              Replace and audit
+              {sameStore ? 'Update and audit' : 'Replace and audit'}
             </button>
             <button className="btn" onClick={() => setPreview(null)}>Cancel</button>
           </div>

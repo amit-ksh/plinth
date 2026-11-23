@@ -76,6 +76,9 @@ async function go(route: string): Promise<void> {
 }
 const heading = (name: string | RegExp) => page.getByRole('heading', { name }).first().waitFor();
 const button = (name: string) => page.getByRole('button', { name, exact: true }).first().click();
+const shot = async (name: string) => {
+  if (shots) await page.screenshot({ path: join(shots, `flow-${name}.png`) });
+};
 const toast = (text: string) => page.locator('.toast', { hasText: text }).waitFor();
 const focused = () => page.evaluate(() => document.activeElement?.id ?? '');
 
@@ -253,6 +256,7 @@ try {
 
   await step('discounts can be added, edited and removed', async () => {
     await go('discounts/:new');
+    await button('Start from scratch');
     await button('Add discount');
     await page.getByText('Use letters, numbers').waitFor();
     await page.getByLabel('Code', { exact: true }).fill('SPRING5');
@@ -265,7 +269,65 @@ try {
     await page.locator('tbody tr', { hasText: 'SPRING5' }).filter({ hasText: '7% off' }).waitFor();
     await page.getByRole('link', { name: /SPRING5/ }).click();
     await button('Remove from audit');
-    await toast('SPRING5 removed');
+    await toast('SPRING5 deleted');
+  });
+
+  await step('a template is checked for leaks before it saves', async () => {
+    await go('discounts/:new');
+    await shot('templates');
+    await page.getByRole('button', { name: /^Clearance/ }).click();
+    await heading('Clearance');
+    await page.getByLabel('Applies to').selectOption({ label: 'Winter' });
+    await button('Add discount');
+    await heading(/This would sell \d+ products? below cost/);
+    await page.locator('.card.leak', { hasText: 'Winter jacket' }).waitFor();
+    assert.equal(await focused(), 'guard-title');
+    await shot('guard');
+    await button('Change it');
+    await page.getByLabel('Percentage', { exact: true }).fill('20');
+    await button('Add discount');
+    await toast('CLEAR40 saved');
+    await page.locator('tbody tr', { hasText: 'CLEAR40' }).waitFor();
+  });
+
+  await step('the calendar shows a scheduled sale on its days only', async () => {
+    const day = (offset: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    await go('discounts');
+    await go('discounts/:new');
+    await button('Start from scratch');
+    await page.getByLabel('Code', { exact: true }).fill('BFCM40');
+    await page.getByLabel('Percentage', { exact: true }).fill('40');
+    await page.getByLabel('Applies to').selectOption({ label: 'Winter' });
+    await page.getByLabel('Starts (optional)').fill(day(5));
+    await page.getByLabel('Last day (optional)').fill(day(7));
+    await button('Add discount');
+    await heading(/This would sell \d+ products? below cost/);
+    await button('Save anyway');
+    await toast('BFCM40 saved');
+    await go('calendar');
+    await heading('Calendar');
+    await page.locator('.stretch.leak', { hasText: 'BFCM40' }).first().waitFor();
+    const quiet = page.locator('.stretch').first();
+    assert.ok(!(await quiet.textContent())!.includes('BFCM40'), 'not live today');
+    assert.ok((await page.locator('.timeline .tl-bar', { hasText: 'BFCM40' }).count()) === 1);
+    await shot('calendar');
+  });
+
+  await step('history lists each change and rolls back the latest', async () => {
+    await go('history');
+    await heading('History');
+    await page.locator('tbody tr', { hasText: 'BFCM40' }).waitFor();
+    await shot('history');
+    await page.getByRole('button', { name: 'Roll back: Created BFCM40' }).click();
+    await toast('Rolled back in this audit');
+    await page.locator('tbody tr', { hasText: 'BFCM40' }).filter({ hasText: 'Rolled back' }).first().waitFor();
+    await go('discounts');
+    assert.equal(await page.locator('tbody tr', { hasText: 'BFCM40' }).count(), 0);
+    await page.locator('tbody tr', { hasText: 'CLEAR40' }).waitFor();
   });
 
   await step('settings validate and re-run the audit', async () => {
@@ -443,7 +505,7 @@ try {
   // Every screen, at every width: accessibility rules, reflow, target size.
   const screens = [
     'home', 'audit', 'product/jacket', 'product/gift-box', 'product/wool-cap', 'product/missing', 'products',
-    'discounts', 'discounts/BOOT20', 'discounts/:new', 'checklist', 'import', 'settings', 'agent',
+    'discounts', 'discounts/BOOT20', 'discounts/:new', 'calendar', 'history', 'checklist', 'import', 'settings', 'agent',
   ];
   // 640x400 is a 1280x800 window at 200% zoom.
   const sizes = [[1440, 900], [1024, 768], [901, 700], [768, 1024], [640, 400], [375, 812], [320, 640]] as const;

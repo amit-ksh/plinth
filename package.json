@@ -31,7 +31,8 @@
     "start": "npm run build && npm run preview",
     "deploy": "npm run build:hosted -w @app/web && cd apps/web && npx --yes wrangler@4.166.0 deploy",
     "shopify:import": "node --experimental-strip-types --no-warnings scripts/shopify-import.ts",
-    "test:worker": "node --experimental-strip-types --no-warnings --test apps/web/worker/oauth.test.ts"
+    "test:worker": "node --experimental-strip-types --no-warnings --test apps/web/worker/oauth.test.ts",
+    "shopify:check-writes": "node --experimental-strip-types --no-warnings scripts/shopify-write-check.ts"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

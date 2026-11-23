@@ -11,6 +11,7 @@ import { productHref, useApp } from '../context.ts';
 import { DiscountForm, summarize } from '../DiscountForm.tsx';
 import { call, explainError } from '../engine.ts';
 import { Disclosure, Icon, Issues, plural } from '../ui.tsx';
+import { useWriter } from '../writer.ts';
 
 interface Result {
   discount: Discount;
@@ -68,7 +69,8 @@ function Ledger() {
 }
 
 export function Home() {
-  const { data, change, money } = useApp();
+  const { data, money } = useApp();
+  const writer = useWriter();
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [issues, setIssues] = useState<string[]>([]);
@@ -206,10 +208,10 @@ export function Home() {
               <button
                 className="btn"
                 onClick={async () => {
-                  if (await change(() => call('saveDiscount', result.discount), `${result.discount.id} added to this audit`)) reset();
+                  if (await writer.save(result.discount, undefined, 'create', `${result.discount.id} added to ${writer.place}`)) reset();
                 }}
               >
-                Add to this audit
+                {writer.linked ? 'Create in Shopify' : 'Add to this audit'}
               </button>
             </div>
           </section>

@@ -14,3 +14,5 @@ export { SAMPLE_SCENARIO, SAMPLE_STORE } from './sample.ts';
 export { loadStore } from './store.ts';
 export { InputError, validate } from './validate.ts';
 export { fromShopify, pullShopify, SHOPIFY_API_VERSION, SHOPIFY_SCOPES, type ShopifyImport, type ShopifyPull } from './shopify.ts';
+export { TEMPLATES, freeCode, type Template } from './templates.ts';
+export { discountMutation, discountMutations, writeDiscount, acceptsTagsOf, needsRecreate, type WriteKind } from './shopify-write.ts';

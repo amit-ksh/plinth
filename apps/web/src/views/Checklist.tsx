@@ -3,15 +3,20 @@ import { describeChange } from '../../../../packages/core/src/format.ts';
 import { useApp } from '../context.ts';
 import { call } from '../engine.ts';
 import { Icon, Page } from '../ui.tsx';
+import { useWriter } from '../writer.ts';
 
 export function Checklist() {
   const { data, change } = useApp();
+  const writer = useWriter();
   const open = data.app.checklist.filter((item) => !item.done);
   const done = data.app.checklist.filter((item) => item.done);
   const focusTitle = () => document.querySelector<HTMLElement>('main h1')?.focus();
 
   return (
-    <Page title="Checklist" lead="Make each change in Shopify, then mark it as made. The audit updates straight away.">
+    <Page
+      title="Checklist"
+      lead={writer.linked ? `Make each change in ${writer.shop} from here. The audit updates straight away.` : 'Make each change in Shopify, then mark it as made. The audit updates straight away.'}
+    >
       {open.length ? (
         <ul className="rows">
           {open.map((item, i) => (
@@ -32,10 +37,10 @@ export function Checklist() {
                 <button
                   className={i === 0 ? 'btn primary' : 'btn'}
                   onClick={async () => {
-                    if (await change(() => call('completeChecklistItem', item.id), 'Marked as made and audit updated')) focusTitle();
+                    if (await writer.applyFix(item)) focusTitle();
                   }}
                 >
-                  I made this change
+                  {writer.linked ? 'Make this change in Shopify' : 'I made this change'}
                 </button>
                 <button
                   className="btn"

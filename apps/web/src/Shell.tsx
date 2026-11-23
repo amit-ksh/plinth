@@ -1,4 +1,5 @@
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
+import Calendar03Icon from '@hugeicons/core-free-icons/Calendar03Icon';
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import CheckListIcon from '@hugeicons/core-free-icons/CheckListIcon';
 import ConnectIcon from '@hugeicons/core-free-icons/ConnectIcon';
@@ -14,6 +15,7 @@ import Settings01Icon from '@hugeicons/core-free-icons/Settings01Icon';
 import SidebarLeftIcon from '@hugeicons/core-free-icons/SidebarLeftIcon';
 import Store01Icon from '@hugeicons/core-free-icons/Store01Icon';
 import Upload01Icon from '@hugeicons/core-free-icons/Upload01Icon';
+import WorkHistoryIcon from '@hugeicons/core-free-icons/WorkHistoryIcon';
 import type { IconSvgElement } from '@hugeicons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PRODUCT_NAME } from '../../../packages/core/src/product.ts';
@@ -137,7 +139,7 @@ export function Shell({ route, toast, dismissToast, children }: {
     .filter((v) => v.state === 'leak' || v.state === 'unknown')
     .sort((a, b) => Number(a.state !== 'leak') - Number(b.state !== 'leak'))
     .slice(0, 4);
-  const onHome = !['audit', 'product', 'products', 'discounts', 'checklist', 'import', 'settings', 'agent'].includes(view);
+  const onHome = !['audit', 'product', 'products', 'discounts', 'calendar', 'history', 'checklist', 'import', 'settings', 'agent'].includes(view);
   const onAudit = view === 'audit' || view === 'product';
 
   return (
@@ -187,7 +189,9 @@ export function Shell({ route, toast, dismissToast, children }: {
                   <NavLink href="#audit" icon={DropletIcon} label="Audit" active={onAudit} count={data.audit.counts.leak} />
                   <NavLink href="#products" icon={PackageIcon} label="Products" active={view === 'products'} />
                   <NavLink href="#discounts" icon={DiscountTag01Icon} label="Discounts" active={view === 'discounts'} />
+                  <NavLink href="#calendar" icon={Calendar03Icon} label="Calendar" active={view === 'calendar'} />
                   <NavLink href="#checklist" icon={CheckListIcon} label="Checklist" active={view === 'checklist'} count={toDo} />
+                  <NavLink href="#history" icon={WorkHistoryIcon} label="History" active={view === 'history'} />
                   <NavLink href="#import" icon={Upload01Icon} label="Import" active={view === 'import'} />
                   <NavLink href="#settings" icon={Settings01Icon} label="Settings" active={view === 'settings'} />
                 </nav>

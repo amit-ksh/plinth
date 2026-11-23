@@ -107,7 +107,24 @@ Status: S01-S08 and S10-S13 are built and tested. S02's checkout confirmation ra
 ### S13 Margin floor
 - [ ] A chosen percentage produces Thin without changing Leak results.
 
+## Discount management (added 2026-11-23)
+
+### M2 Create and edit with a leak guard
+- [x] Every save is audited in a scratch graph first; a leaking change names the products and stacks, and can be changed or saved anyway.
+- [x] When linked to Shopify, create, update, end, run again and delete are written to Shopify first and recorded only if Shopify accepts them.
+- [x] Writes round-trip through a real store (`npm run shopify:check-writes`), including moving between collections and products, clearing minimums and changing type.
+
+### M3 Templates
+- [x] Seven templates with combination settings chosen so they can't stack into a loss alone, each saying why.
+
+### M4 Campaign calendar
+- [x] Six weeks, stretch by stretch: what's live and which products lose money then. A scheduled sale's leak shows only on its days.
+
+### M6 History and rollback
+- [x] Each change keeps the discount before and after, where it was saved, and rolls back the latest change per discount, in Shopify too when linked.
+- [x] Checklist fixes are recorded, and are made in Shopify directly when linked.
+
 ## Not in this version
 
-Checkout blocking, writing to Shopify, discount creation, accounts, billing, order analytics, taxes and payment fees.
+Checkout blocking, accounts, approvals, alerts, bulk codes, billing, order analytics, taxes and payment fees.
 

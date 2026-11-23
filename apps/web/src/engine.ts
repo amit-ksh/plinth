@@ -1,5 +1,6 @@
 import type { Workspace } from '../../../packages/core/src/workspace.ts';
 import type { Method, Reply } from './protocol.ts';
+import { ShopifyError } from './shopify.ts';
 
 export class EngineError extends Error {
   /** Set when the user can fix the problem. */
@@ -40,5 +41,6 @@ export function call<M extends Method>(method: M, ...args: Parameters<Workspace[
 /** The words to show for any failure: always what happened and what to do next. */
 export function explainError(error: unknown): string[] {
   if (error instanceof EngineError && error.issues) return error.issues;
+  if (error instanceof ShopifyError) return error.issues;
   return ['Unable to finish that. Reload the page and try again. Changes you saved earlier are kept'];
 }

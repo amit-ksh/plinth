@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { CURRENCIES, parseMoney, parsePercent, type Currency } from '../../../../packages/core/src/format.ts';
 import { editable, useApp } from '../context.ts';
 import { call } from '../engine.ts';
+import { connectShopify, disconnectShopify, pullShopify, SHOPIFY_CONNECT, shopifySession } from '../shopify.ts';
 import { Page } from '../ui.tsx';
 
 function SettingsForm() {
@@ -78,12 +79,63 @@ function SettingsForm() {
   );
 }
 
+function ShopifyLinkSection() {
+  const { data, change, notify } = useApp();
+  const link = data.app.shopify;
+  const [session, setSession] = useState<{ connected: boolean; shop?: string } | null>(null);
+  useEffect(() => {
+    shopifySession().then(setSession);
+  }, []);
+  if (!SHOPIFY_CONNECT || !link) return null;
+  const live = session?.connected && session.shop === link.shop;
+
+  return (
+    <section className="section" aria-labelledby="shopify">
+      <h2 id="shopify">Shopify</h2>
+      <p className="muted">
+        This audit is linked to <span className="code">{link.shop}</span>.{' '}
+        {session === null ? '' : live ? 'Discount changes are saved there.' : 'The sign-in has ended, so connect again before saving changes.'}
+      </p>
+      <div className="actions">
+        {live ? (
+          <>
+            <button
+              className="btn"
+              onClick={() =>
+                change(async () => {
+                  const fresh = await pullShopify();
+                  return call('refreshFromShopify', fresh.store, fresh.link);
+                }, 'Refreshed from Shopify and audited')
+              }
+            >
+              Refresh from Shopify
+            </button>
+            <button
+              className="btn"
+              onClick={async () => {
+                await disconnectShopify().catch(() => null);
+                setSession({ connected: false });
+                notify('Signed out of Shopify. The audit stays here');
+              }}
+            >
+              Sign out of Shopify
+            </button>
+          </>
+        ) : (
+          <button className="btn" onClick={() => connectShopify(link.shop.replace(/\.myshopify\.com$/, ''))}>Connect again</button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function Settings() {
   const { data, change } = useApp();
   return (
     <Page title="Settings" lead="These change how the audit does its math.">
       {/* Undo, import and reset change the saved values, so the form restarts from them. */}
       <SettingsForm key={JSON.stringify([data.app.settings, data.store.plus])} />
+      <ShopifyLinkSection />
       <section className="section" aria-labelledby="sample">
         <h2 id="sample">Sample data</h2>
         <p className="muted">Replace what’s here with the sample store. You can undo it.</p>

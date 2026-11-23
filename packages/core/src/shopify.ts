@@ -2,11 +2,12 @@
 // Read-only: needs read_products, read_discounts and read_inventory. No customer data.
 // `pullShopify` takes the request function so the Cloudflare Worker and Node scripts share it.
 import { CURRENCIES, type Currency } from './format.ts';
+import type { ShopifyLink } from './app-state.ts';
 import type { Discount, DiscountClass, StoreInput, Variant } from './types.ts';
 import { validate } from './validate.ts';
 
 export const SHOPIFY_API_VERSION = '2026-10';
-export const SHOPIFY_SCOPES = 'read_products,read_discounts,read_inventory';
+export const SHOPIFY_SCOPES = 'read_products,read_inventory,write_discounts';
 /** Stops very large stores before they exhaust a browser tab. */
 export const SHOPIFY_MAX_VARIANTS = 20_000;
 
@@ -106,6 +107,8 @@ export interface ShopifyImport {
   /** Plain-language notes about anything Plinth could not model exactly. */
   notes: string[];
   missingCost: number;
+  /** Shopify IDs, so edits made in Plinth can be written back. */
+  link: ShopifyLink;
 }
 
 const ID = /^[A-Za-z0-9_.:/-]{1,128}$/;
@@ -130,6 +133,7 @@ function idFor(raw: string, used: Set<string>): string {
 export function fromShopify(pull: ShopifyPull): ShopifyImport {
   const notes: string[] = [];
   const collections = new Map<string, string>();
+  const link: ShopifyLink = { shop: pull.shop.myshopifyDomain, variants: {}, collections: {}, discounts: {} };
   const variants: Variant[] = [];
   const variantsOf = new Map<string, string[]>();
   const usedVariant = new Set<string>();
@@ -138,7 +142,10 @@ export function fromShopify(pull: ShopifyPull): ShopifyImport {
   let giftCards = 0;
   const products = pull.products.filter((p) => !(p.isGiftCard && ++giftCards));
   for (const p of products) {
-    for (const c of p.collections.nodes) collections.set(`c${numeric(c.id)}`, c.title);
+    for (const c of p.collections.nodes) {
+      collections.set(`c${numeric(c.id)}`, c.title);
+      link.collections[`c${numeric(c.id)}`] = c.id;
+    }
     if (p.variants.pageInfo?.hasNextPage) splitProducts++;
     const productImage = p.featuredMedia?.preview?.image?.url;
     const ids: string[] = [];
@@ -147,6 +154,7 @@ export function fromShopify(pull: ShopifyPull): ShopifyImport {
       const id = sku && ID.test(sku) && !usedVariant.has(sku) ? sku : `v${numeric(v.id)}`;
       usedVariant.add(id);
       ids.push(id);
+      link.variants[id] = v.id;
       const image = v.image?.url ?? productImage;
       variants.push({
         id,
@@ -234,6 +242,7 @@ export function fromShopify(pull: ShopifyPull): ShopifyImport {
     out.collections = out.collections.filter((c) => collections.has(c));
     if (out.supported && !out.allVariants && !out.variants.length && !out.collections.length) continue;
     discounts.push(out);
+    link.discounts[out.id] = node.id;
   }
 
   // Collections that only discounts referenced, and that have no imported product, still need a node.
@@ -254,5 +263,5 @@ export function fromShopify(pull: ShopifyPull): ShopifyImport {
   validate(store);
   const currency = (CURRENCIES as readonly string[]).includes(pull.shop.currencyCode) ? (pull.shop.currencyCode as Currency) : null;
   if (!currency) notes.push(`The store sells in ${pull.shop.currencyCode}, which Plinth can’t format yet. Amounts are shown in your chosen currency.`);
-  return { store, storeName: String(pull.shop.name).slice(0, 80) || 'My store', currency, notes, missingCost: variants.filter((v) => v.cost === null).length };
+  return { store, storeName: String(pull.shop.name).slice(0, 80) || 'My store', currency, notes, missingCost: variants.filter((v) => v.cost === null).length, link };
 }
