@@ -6,7 +6,7 @@ import Download01Icon from '@hugeicons/core-free-icons/Download01Icon';
 import PauseIcon from '@hugeicons/core-free-icons/PauseIcon';
 import PlayIcon from '@hugeicons/core-free-icons/PlayIcon';
 import StopCircleIcon from '@hugeicons/core-free-icons/StopCircleIcon';
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { generateCodes, MAX_BULK_CODES } from '../../../../packages/core/src/shopify-write.ts';
 import { TEMPLATES, type Template } from '../../../../packages/core/src/templates.ts';
 import type { Discount } from '../../../../packages/core/src/types.ts';
@@ -14,7 +14,7 @@ import type { PromotionCheck } from '../../../../packages/core/src/workspace.ts'
 import { productHref, useApp } from '../context.ts';
 import { amountOf, DiscountForm, summarize, targetOf } from '../DiscountForm.tsx';
 import { call, explainError } from '../engine.ts';
-import { Disclosure, download, Icon, Issues, Page, plural } from '../ui.tsx';
+import { Disclosure, download, Filters, Icon, Issues, Page, plural } from '../ui.tsx';
 import { useWriter } from '../writer.ts';
 
 // A colon can't be confused with a real code someone typed, because codes shown here come from the store.
@@ -287,7 +287,7 @@ function Editor({ id }: { id: string }) {
 }
 
 /** Pause all, with a confirmation, and the banner that resumes a paused batch. */
-function KillSwitch() {
+function KillSwitch({ children }: { children?: ReactNode }) {
   const { data } = useApp();
   const writer = useWriter();
   const [confirming, setConfirming] = useState(false);
@@ -296,8 +296,15 @@ function KillSwitch() {
   const paused = [...data.app.history].reverse().find((e) => e.action === 'pause' && e.batch && !e.rolledBack);
   const pausedCount = paused ? data.app.history.filter((e) => e.batch === paused.batch && !e.rolledBack).length : 0;
 
+  const toolbar = (button?: ReactNode) => (
+    <div className="toolbar">
+      {children}
+      {button}
+    </div>
+  );
   if (paused) {
     return (
+      <>
       <div className="card tinted kill" role="status">
         <p>
           <strong>{plural(pausedCount, { one: '{n} discount paused', other: '{n} discounts paused' })}</strong>{' '}
@@ -310,11 +317,14 @@ function KillSwitch() {
           </button>
         </div>
       </div>
+      {toolbar()}
+      </>
     );
   }
-  if (!live.length) return null;
+  if (!live.length) return toolbar();
   if (confirming) {
     return (
+      <>
       <div className="card unknown kill">
         <p>
           <strong>Pause {plural(live.length, { one: '{n} live discount', other: 'all {n} live discounts' })}?</strong>{' '}
@@ -334,29 +344,34 @@ function KillSwitch() {
           <button className="btn" onClick={() => setConfirming(false)}>Cancel</button>
         </div>
       </div>
+      {toolbar()}
+      </>
     );
   }
-  return (
-    <div className="actions">
-      <button className="btn with-icon" onClick={() => setConfirming(true)}>
-        <Icon icon={PauseIcon} />
-        Pause all discounts
-      </button>
-    </div>
+  return toolbar(
+    <button className="btn with-icon" onClick={() => setConfirming(true)}>
+      <Icon icon={PauseIcon} />
+      Pause all
+    </button>,
   );
 }
 
 export function Discounts({ id }: { id?: string }) {
   const { data, money } = useApp();
   const writer = useWriter();
+  const [show, setShow] = useState<'all' | 'active' | 'scheduled' | 'ended' | 'leaking'>('all');
   if (id) return <Editor id={id} key={id} />;
   const now = Date.now();
-  const { discounts } = data.store;
+  const all = data.store.discounts;
   const leaksBy = new Map<string, number>();
   for (const v of data.audit.variants) {
     if (v.state !== 'leak') continue;
     for (const d of v.worst!.stack) leaksBy.set(d, (leaksBy.get(d) ?? 0) + 1);
   }
+  const statusCount = (s: string) => all.filter((d) => statusOf(d, now) === s).length;
+  const discounts = all.filter((d) =>
+    show === 'all' ? true : show === 'leaking' ? leaksBy.has(d.id) : statusOf(d, now) === show,
+  );
 
   return (
     <Page
@@ -370,8 +385,25 @@ export function Discounts({ id }: { id?: string }) {
         </a>
       }
     >
-      {discounts.length > 0 && <KillSwitch />}
-      {discounts.length ? (
+      {all.length > 0 && (
+        <KillSwitch>
+        <Filters
+          label="Show discounts"
+          value={show}
+          onChange={setShow}
+          options={[
+            { key: 'all', label: 'All', count: all.length },
+            { key: 'active', label: 'Active', count: statusCount('active') },
+            { key: 'scheduled', label: 'Scheduled', count: statusCount('scheduled') },
+            { key: 'ended', label: 'Ended', count: statusCount('ended') },
+            { key: 'leaking', label: 'In a leak', count: leaksBy.size },
+          ]}
+        />
+        </KillSwitch>
+      )}
+      {all.length && !discounts.length ? (
+        <div className="card"><p className="muted">No discount matches this filter.</p></div>
+      ) : discounts.length ? (
         <div className="table-wrap">
           <table className="table">
             <thead>

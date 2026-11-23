@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import { productHref, useApp } from '../context.ts';
-import { Page, plural, StateBadge, Thumb } from '../ui.tsx';
+import { Filters, Page, plural, StateBadge, Thumb } from '../ui.tsx';
 
 const STEP = 25;
 
 export function Products() {
   const { data, query, setQuery, money } = useApp();
   const [limit, setLimit] = useState(STEP);
-  useEffect(() => setLimit(STEP), [query]);
+  const [status, setStatus] = useState<'all' | 'leak' | 'thin' | 'unknown' | 'clear_in_model'>('all');
+  useEffect(() => setLimit(STEP), [query, status]);
 
   const needle = query.trim().toLowerCase();
   const rank = { leak: 0, unknown: 1, thin: 2, clear_in_model: 3 };
-  const found = data.audit.variants
-    .filter((v) => v.title.toLowerCase().includes(needle) || v.id.toLowerCase().includes(needle))
+  const matching = data.audit.variants.filter((v) => v.title.toLowerCase().includes(needle) || v.id.toLowerCase().includes(needle));
+  const count = (s: string) => matching.filter((v) => v.state === s).length;
+  const found = matching
+    .filter((v) => status === 'all' || v.state === status)
     .sort((a, b) => rank[a.state] - rank[b.state] || a.title.localeCompare(b.title, 'en', { numeric: true }));
   const rest = Math.min(found.length - limit, STEP);
   const byId = new Map(data.store.variants.map((v) => [v.id, v]));
@@ -21,6 +24,18 @@ export function Products() {
   return (
     <Page title="Products" lead="Every product, with the ones that need you first." wide>
       <div className="section">
+        <Filters
+          label="Show products"
+          value={status}
+          onChange={setStatus}
+          options={[
+            { key: 'all', label: 'All', count: matching.length },
+            { key: 'leak', label: 'Below cost', count: count('leak') },
+            { key: 'thin', label: 'Thin margin', count: count('thin') },
+            { key: 'unknown', label: 'Can’t check', count: count('unknown') },
+            { key: 'clear_in_model', label: 'Healthy', count: count('clear_in_model') },
+          ]}
+        />
         <p className="caption muted" role="status">
           {needle
             ? plural(found.length, { one: `{n} result for “${query.trim()}”`, other: `{n} results for “${query.trim()}”` })

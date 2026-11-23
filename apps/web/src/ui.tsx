@@ -123,3 +123,22 @@ export function Thumb({ title, image }: { title: string; image?: string }) {
   for (const ch of title) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0;
   return <span className={`thumb ${TILES[hash % TILES.length]}`} aria-hidden="true">{initials}</span>;
 }
+
+/** A row of filter buttons with counts, like the status tabs above a Shopify admin table. */
+export function Filters<K extends string>({ label, options, value, onChange }: {
+  label: string;
+  options: { key: K; label: string; count: number }[];
+  value: K;
+  onChange: (key: K) => void;
+}) {
+  return (
+    <div className="filters" role="group" aria-label={label}>
+      {options.map((o) => (
+        <button key={o.key} className="filter" aria-pressed={value === o.key} onClick={() => onChange(o.key)}>
+          {o.label}
+          <span className="filter-count num">{o.count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}

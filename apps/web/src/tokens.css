@@ -38,6 +38,7 @@
   --amber-50: #fdf5e6;
   --amber-200: #eedfbd;
   --amber-800: #7a4b0b;
+  --amber-600: #b7791f;
 
   /* Surfaces */
   --color-bg-page: var(--cream-200);
@@ -75,6 +76,14 @@
   --color-warning-subtle: var(--amber-50);
   --color-warning-border: var(--amber-200);
   --color-warning-text: var(--amber-800);
+
+  /* Chart marks. Status hues, validated together (dataviz validator: lightness, chroma, CVD, contrast on the surface).
+     Always shown with a label or legend; never the only cue. */
+  --chart-leak: var(--red-700);
+  --chart-thin: var(--amber-600);
+  --chart-clear: var(--green-600);
+  --chart-unknown: #b9b0a0;
+  --chart-grid: var(--cream-200);
 
   /* Atmosphere, only behind the window and under the sidebar's lower edge */
   --gradient-page:

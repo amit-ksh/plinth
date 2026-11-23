@@ -1,13 +1,11 @@
-import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
-import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
+import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import DiscountTag01Icon from '@hugeicons/core-free-icons/DiscountTag01Icon';
-import DropletIcon from '@hugeicons/core-free-icons/DropletIcon';
-import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 import SquareLock02Icon from '@hugeicons/core-free-icons/SquareLock02Icon';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Discount, VariantAudit } from '../../../../packages/core/src/types.ts';
-import type { PromotionCheck } from '../../../../packages/core/src/workspace.ts';
-import { productHref, useApp } from '../context.ts';
+import type { Calendar, PromotionCheck } from '../../../../packages/core/src/workspace.ts';
+import { formatDay, productHref, useApp } from '../context.ts';
+import { calendarDays, ChartCard, ColumnChart, RankedBars, SegmentedBar, StatTile } from '../charts.tsx';
 import { DiscountForm, summarize } from '../DiscountForm.tsx';
 import { call, explainError } from '../engine.ts';
 import { Disclosure, Icon, Issues, plural } from '../ui.tsx';
@@ -22,49 +20,155 @@ interface Result {
 const perItem = (v: VariantAudit) => (v.worst!.net - v.worst!.cost) / v.worst!.qty;
 const LEDGER_ROWS = 5;
 
-/** The answer first: what in this store is losing money right now. */
-function Ledger() {
-  const { data, money } = useApp();
-  const leaks = data.audit.variants.filter((v) => v.state === 'leak').sort((a, b) => perItem(a) - perItem(b));
-  const unknown = data.audit.variants.filter((v) => v.state === 'unknown');
-  const rows = [...leaks, ...unknown];
-  const shown = rows.slice(0, LEDGER_ROWS);
+const DAYS = 42;
+const DAY_MS = 86_400_000;
+const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 ? 1 : 0)}%`;
 
-  if (!rows.length) {
-    return (
-      <a className="row" href="#products">
-        <Icon icon={CheckmarkCircle02Icon} />
-        <span className="body">
-          <strong>{plural(data.audit.counts.clear_in_model, { one: '{n} product checked', other: '{n} products checked' })}</strong>
-          <span className="caption muted">No stack in this audit sells below cost</span>
-        </span>
-        <span className="end"><Icon icon={ArrowRight01Icon} /></span>
-      </a>
-    );
-  }
+/** The overview: headline numbers, then where the money goes, how margins split, and what the next weeks hold. */
+function Dashboard() {
+  const { data, money } = useApp();
+  const [cal, setCal] = useState<Calendar | null>(null);
+  useEffect(() => {
+    let live = true;
+    call('calendar', DAYS).then((c) => live && setCal(c), () => {});
+    return () => {
+      live = false;
+    };
+  }, [data]);
+
+  const { variants, counts } = data.audit;
+  const now = Date.now();
+  const leaks = variants.filter((v) => v.state === 'leak').sort((a, b) => perItem(a) - perItem(b));
+  const worst = leaks[0];
+  const live = data.store.discounts.filter((d) => d.supported && (d.starts === null || d.starts <= now) && (d.ends === null || d.ends > now));
+  const scheduled = data.store.discounts.filter((d) => d.starts !== null && d.starts > now && (d.ends === null || d.ends > now));
+  const unknown = variants.filter((v) => v.state === 'unknown');
+  const missingCost = unknown.filter((v) => v.unknown.includes('missing_cost')).length;
+
+  const byDiscount = new Map<string, number>();
+  for (const v of leaks) for (const id of v.worst!.stack) byDiscount.set(id, (byDiscount.get(id) ?? 0) + 1);
+  const discountRows = [...byDiscount]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 5)
+    .map(([id, n]) => ({ id, label: id, value: n, display: plural(n, { one: '{n} product', other: '{n} products' }), href: `#discounts/${encodeURIComponent(id)}` }));
+
+  const days = cal ? calendarDays(cal, DAYS, formatDay) : [];
+  const leakDays = days.filter((d) => d.value > 0).length;
+  const peak = days.reduce((m, d) => Math.max(m, d.value), 0);
 
   return (
-    <ul className="ledger" aria-label="Losing money now">
-      {shown.map((v) => (
-        <li key={v.id}>
-          <a className={`ledger-row ${v.state}`} href={productHref(v.id)}>
-            <Icon icon={v.state === 'leak' ? DropletIcon : HelpCircleIcon} />
-            <span className="body">
-              <strong>{v.state === 'leak' ? `${v.title} loses ${money(v.worst!.cost - v.worst!.net)}` : v.title}</strong>
-              <span className="caption muted">
-                {v.state === 'leak'
-                  ? v.worst!.stack.length ? <span className="code">{v.worst!.stack.join(' + ')}</span> : 'Priced below cost'
-                  : v.unknown[0] === 'missing_cost' ? 'Add a cost to check it' : 'Can’t be sure yet'}
-              </span>
-            </span>
-            <span className="end caption">{v.state === 'leak' ? 'See why, and fix it' : 'Check'}<Icon icon={ArrowRight01Icon} size={16} /></span>
-          </a>
-        </li>
-      ))}
-      {rows.length > shown.length && (
-        <li><a className="ledger-more" href="#audit">See all {rows.length}</a></li>
-      )}
-    </ul>
+    <>
+      <div className="stats">
+        <StatTile
+          label="Selling below cost"
+          tone={counts.leak ? 'leak' : 'clear'}
+          value={counts.leak}
+          note={counts.leak ? plural(counts.leak, { one: 'product loses money', other: 'products lose money' }) : 'No leak found'}
+          href="#audit"
+        />
+        <StatTile
+          label="Worst loss on one order"
+          value={worst ? money(worst.worst!.cost - worst.worst!.net) : money(0)}
+          note={worst ? worst.title : 'Nothing loses money'}
+          href={worst ? productHref(worst.id) : '#audit'}
+        />
+        <StatTile
+          label="Live discounts"
+          value={live.length}
+          note={scheduled.length ? `${scheduled.length} more scheduled` : 'None scheduled'}
+          href="#discounts"
+        />
+        <StatTile
+          label="Can’t check"
+          tone={unknown.length ? 'unknown' : undefined}
+          value={unknown.length}
+          note={unknown.length ? (missingCost ? plural(missingCost, { one: '{n} has no cost', other: '{n} have no cost' }) : 'Unsupported discounts') : 'Every product checked'}
+          href="#products"
+        />
+      </div>
+
+      <div className="charts">
+        <ChartCard
+          title="Where you lose money"
+          subtitle="Worst loss per order, biggest first"
+          action={leaks.length > 5 ? <a className="link" href="#audit">All {leaks.length}</a> : undefined}
+        >
+          <RankedBars
+            tone="leak"
+            empty="No product sells below cost with the discounts you have."
+            rows={leaks.slice(0, 5).map((v) => ({
+              id: v.id,
+              label: v.title,
+              value: v.worst!.cost - v.worst!.net,
+              display: money(v.worst!.cost - v.worst!.net),
+              detail: v.worst!.stack.join(' + '),
+              href: productHref(v.id),
+            }))}
+          />
+        </ChartCard>
+
+        <ChartCard title="Margins at worst" subtitle={`All ${variants.length} products, with the deepest discount stack each can get`}>
+          <SegmentedBar
+            unit={{ one: '{n} product', other: '{n} products' }}
+            parts={[
+              { label: 'Below cost', value: counts.leak, tone: 'leak', href: '#audit' },
+              { label: data.app.settings.floorBps || Object.keys(data.app.guardrails.collections).length ? 'Below minimum margin' : 'Thin margin', value: counts.thin, tone: 'thin', href: '#products' },
+              { label: 'Healthy', value: counts.clear_in_model, tone: 'clear', href: '#products' },
+              { label: 'Can’t check', value: counts.unknown, tone: 'unknown', href: '#products' },
+            ]}
+          />
+          {!data.app.settings.floorBps && !Object.keys(data.app.guardrails.collections).length && (
+            <p className="caption muted">Set a minimum margin in <a className="link" href="#settings">Settings</a> to see thin margins too.</p>
+          )}
+        </ChartCard>
+
+        <ChartCard
+          wide
+          title="Leaks over the next six weeks"
+          subtitle={cal ? (leakDays ? `Products below cost on ${plural(leakDays, { one: '{n} day', other: '{n} days' })}, ${peak} at most` : 'No leak found on any day') : 'Checking each day…'}
+          action={<a className="link" href="#calendar">Open calendar</a>}
+        >
+          {cal ? (
+            <ColumnChart
+              points={days}
+              tone="leak"
+              unit={{ one: '{n} product below cost', other: '{n} products below cost' }}
+              summary={leakDays ? `Products selling below cost each day for the next ${DAYS} days. ${leakDays} days have a leak; the most on one day is ${peak}.` : `No product sells below cost on any of the next ${DAYS} days.`}
+            />
+          ) : (
+            <div className="columns-loading" aria-hidden="true" />
+          )}
+        </ChartCard>
+
+        <ChartCard title="Discounts behind the losses" subtitle="How many losing products each discount is part of">
+          <RankedBars tone="accent" empty="No discount is part of a losing stack." rows={discountRows} />
+        </ChartCard>
+
+        <ChartCard title="Scheduled next" subtitle="Promotions that start in the next six weeks">
+          {scheduled.filter((d) => d.starts! < now + DAYS * DAY_MS).length ? (
+            <ul className="upcoming">
+              {scheduled
+                .filter((d) => d.starts! < now + DAYS * DAY_MS)
+                .sort((a, b) => a.starts! - b.starts!)
+                .slice(0, 5)
+                .map((d) => (
+                  <li key={d.id}>
+                    <a href={`#discounts/${encodeURIComponent(d.id)}`}>
+                      <span className="code">{d.id}</span>
+                      <span className="muted">{formatDay(d.starts!)}</span>
+                    </a>
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <div className="chart-empty">
+              <p className="muted">Nothing scheduled. Plan a sale and see its leaks before it starts.</p>
+              <a className="btn with-icon" href="#discounts/:new"><Icon icon={Add01Icon} />Plan a promotion</a>
+            </div>
+          )}
+        </ChartCard>
+      </div>
+    </>
   );
 }
 
@@ -127,21 +231,16 @@ export function Home() {
     <div className="home">
       <header className="home-head">
         <p className="eyebrow">
-          {data.app.settings.storeName} · {plural(data.store.variants.length, { one: '{n} product', other: '{n} products' })} · {plural(data.store.discounts.length, { one: '{n} discount', other: '{n} discounts' })}{data.app.sample ? ' · Sample data' : ''}
+          {data.app.settings.storeName} · {plural(data.store.variants.length, { one: '{n} product', other: '{n} products' })} · {plural(data.store.discounts.length, { one: '{n} discount', other: '{n} discounts' })}
         </p>
         <h1 tabIndex={-1}>
           {data.audit.counts.leak
             ? plural(data.audit.counts.leak, { one: '{n} product sells below cost', other: '{n} products sell below cost' })
             : 'No leak found in this audit'}
         </h1>
-        <p className="muted">
-          {data.audit.counts.leak
-            ? 'When these discounts stack at checkout, the order earns less than the product cost.'
-            : 'Check your next promotion before it goes live.'}
-        </p>
       </header>
 
-      <Ledger />
+      <Dashboard />
 
       <form className="launch" onSubmit={submit}>
         <h2 className="launch-title">Check a promotion before it goes live</h2>

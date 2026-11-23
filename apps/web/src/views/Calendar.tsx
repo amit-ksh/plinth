@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { Calendar as CalendarData } from '../../../../packages/core/src/workspace.ts';
 import { formatDay, formatStretch, productHref, useApp } from '../context.ts';
 import { call, explainError } from '../engine.ts';
+import { calendarDays, ChartCard, ColumnChart } from '../charts.tsx';
 import { Disclosure, Icon, Issues, Page, plural } from '../ui.tsx';
 
 const DAYS = 42;
@@ -19,11 +20,6 @@ function Timeline({ cal }: { cal: CalendarData }) {
     d.setDate(d.getDate() + i);
     return d;
   });
-  const leakOn = days.map((d) => {
-    const from = d.getTime();
-    const to = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
-    return Math.max(0, ...cal.segments.filter((s) => s.start < to && s.end > from).map((s) => s.leaks.length));
-  });
   const shown = cal.discounts.filter((d) => (d.ends === null || d.ends > cal.start) && (d.starts === null || d.starts < cal.end));
 
   return (
@@ -35,10 +31,6 @@ function Timeline({ cal }: { cal: CalendarData }) {
           <span key={`h${i}`} className={`tl-day${d.getDay() === 1 || i === 0 ? ' week' : ''}`}>
             {i === 0 ? 'Today' : d.getDay() === 1 ? `${d.getDate()} ${d.toLocaleString('en', { month: 'short' })}` : ''}
           </span>
-        ))}
-        <span className="tl-label">Leaks</span>
-        {leakOn.map((n, i) => (
-          <span key={`r${i}`} className={`tl-risk${n ? ' leak' : ''}`} title={n ? `${n} below cost` : 'No leak found'}>{n || ''}</span>
         ))}
         {shown.map((d) => {
           const from = d.starts === null ? 0 : dayOf(cal, d.starts);
@@ -98,7 +90,19 @@ export function Calendar() {
               ? `Products sell below cost on ${plural(leakDays, { one: '{n} day', other: '{n} days' })} of the next ${DAYS}.`
               : `No leak found on any day of the next ${DAYS}.`}
           </p>
-          {cal.discounts.length > 0 && <Timeline cal={cal} />}
+          <ChartCard title="Products below cost, day by day" subtitle="Each column is one day, with the discounts live that day">
+            <ColumnChart
+              points={calendarDays(cal, DAYS, formatDay)}
+              tone="leak"
+              unit={{ one: '{n} product below cost', other: '{n} products below cost' }}
+              summary={leakDays ? `Products selling below cost each day for the next ${DAYS} days, on ${leakDays} of them.` : `No product sells below cost on any of the next ${DAYS} days.`}
+            />
+          </ChartCard>
+          {cal.discounts.length > 0 && (
+            <ChartCard title="When each discount runs" subtitle="Bars show the days a discount is live">
+              <Timeline cal={cal} />
+            </ChartCard>
+          )}
           <div className="section">
             <h2>Day by day</h2>
             <ul className="stretches">

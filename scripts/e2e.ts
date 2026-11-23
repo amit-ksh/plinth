@@ -99,9 +99,10 @@ try {
 
   await step('opens on the prompt, with the sample audited', async () => {
     await heading('2 products sell below cost');
-    await page.getByText('Winter jacket loses $5.00').waitFor();
-    await page.getByText('Leather boots loses $2.00').waitFor();
-    assert.equal(await page.locator('.ledger-row').count(), 3);
+    await page.locator('.ranked-row', { hasText: 'Winter jacket' }).filter({ hasText: '$5.00' }).waitFor();
+    await page.locator('.ranked-row', { hasText: 'Leather boots' }).filter({ hasText: '$2.00' }).waitFor();
+    await page.locator('.stat', { hasText: 'Worst loss on one order' }).filter({ hasText: '$5.00' }).waitFor();
+    await page.locator('.columns svg').waitFor();
   });
 
   await step('empty and unsupported promotions explain the fix', async () => {
@@ -361,7 +362,8 @@ try {
 
   await step('pause all ends every live discount, and resume all brings them back', async () => {
     await go('discounts');
-    await button('Pause all discounts');
+    await button('Pause all');
+    await page.getByText(/Pause all \d+ live discounts\?/).waitFor();
     await button('Pause all');
     await toast(/Paused \d+ live discounts/);
     await page.getByText(/discounts paused/).waitFor();
@@ -520,7 +522,7 @@ try {
     await button('Load sample store');
     await toast('Sample store loaded');
     await go('home');
-    await page.getByText('Winter jacket loses $5.00').waitFor();
+    await page.locator('.ranked-row', { hasText: 'Winter jacket' }).first().waitFor();
     await button('Dismiss message');
   });
 
@@ -535,10 +537,10 @@ try {
   await step('keyboard reaches everything with a visible focus ring', async () => {
     await page.goto(`${url}#home`);
     await page.reload();
-    await page.locator('.ledger-row').first().waitFor();
+    await page.locator('.ranked-row').first().waitFor();
     const seen: string[] = [];
     const bare: string[] = [];
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0; i < 48; i++) {
       await page.keyboard.press('Tab');
       const at = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement;
@@ -554,7 +556,7 @@ try {
     }
     assert.equal(seen[0], 'Skip to content');
     for (const must of ['search', 'promotion', 'Check promotion', 'Connect an AI agent']) assert.ok(seen.includes(must), must);
-    assert.ok(seen.some((name) => name.includes('Winter jacket loses')), 'ledger rows');
+    assert.ok(seen.some((name) => name.includes('Winter jacket')), 'loss chart rows');
     assert.deepEqual(bare, []);
   });
 

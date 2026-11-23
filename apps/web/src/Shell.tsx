@@ -185,14 +185,16 @@ export function Shell({ route, toast, dismissToast, children }: {
 
               <div className="side-scroll">
                 <nav className="nav" aria-label="Main">
-                  <span className="nav-label">Workspace</span>
-                  <NavLink href="#home" icon={Home01Icon} label="Home" active={onHome} />
-                  <NavLink href="#audit" icon={DropletIcon} label="Audit" active={onAudit} count={data.audit.counts.leak} />
-                  <NavLink href="#products" icon={PackageIcon} label="Products" active={view === 'products'} />
+                  <span className="nav-label">Overview</span>
+                  <NavLink href="#home" icon={Home01Icon} label="Dashboard" active={onHome} />
+                  <NavLink href="#audit" icon={DropletIcon} label="Leaks" active={onAudit} count={data.audit.counts.leak} />
+                  <NavLink href="#checklist" icon={CheckListIcon} label="Checklist" active={view === 'checklist'} count={toDo} />
+                  <span className="nav-label">Promotions</span>
                   <NavLink href="#discounts" icon={DiscountTag01Icon} label="Discounts" active={view === 'discounts'} />
                   <NavLink href="#calendar" icon={Calendar03Icon} label="Calendar" active={view === 'calendar'} />
-                  <NavLink href="#checklist" icon={CheckListIcon} label="Checklist" active={view === 'checklist'} count={toDo} />
                   <NavLink href="#history" icon={WorkHistoryIcon} label="History" active={view === 'history'} />
+                  <span className="nav-label">Store</span>
+                  <NavLink href="#products" icon={PackageIcon} label="Products" active={view === 'products'} />
                   <NavLink href="#import" icon={Upload01Icon} label="Import" active={view === 'import'} />
                   <NavLink href="#settings" icon={Settings01Icon} label="Settings" active={view === 'settings'} />
                 </nav>
@@ -219,13 +221,15 @@ export function Shell({ route, toast, dismissToast, children }: {
           <div className="pane">
             <header className="topbar">
               <StoreMenu />
-              <nav className="switch" aria-label="Mode">
-                <a href="#home" aria-current={onHome ? 'page' : undefined}>Check</a>
-                <a href="#audit" aria-current={onAudit ? 'page' : undefined}>Audit</a>
-              </nav>
-              <a className="btn ghost round end" href="#agent" aria-label="Connect an AI agent">
-                <Icon icon={ConnectIcon} size={20} />
-              </a>
+              <span />
+              <span className="topbar-end">
+                <a className={`source${data.app.shopify ? ' linked' : ''}`} href={data.app.shopify ? '#settings' : '#import'}>
+                  {data.app.sample ? 'Sample data' : data.app.shopify ? `Linked to ${data.app.shopify.shop.replace('.myshopify.com', '')}` : 'Imported from files'}
+                </a>
+                <a className="btn ghost round" href="#agent" aria-label="Connect an AI agent">
+                  <Icon icon={ConnectIcon} size={20} />
+                </a>
+              </span>
             </header>
 
             <div className="main-panel">
