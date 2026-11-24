@@ -3,6 +3,7 @@ import { PRODUCT_NAME } from '../../../packages/core/src/product.ts';
 import type { Snapshot } from '../../../packages/core/src/workspace.ts';
 import { Context, readRoute, type Route } from './context.ts';
 import { call, explainError } from './engine.ts';
+import { useAgentSync } from './desktop.ts';
 import { Shell } from './Shell.tsx';
 import { Audit } from './views/Audit.tsx';
 import { Calendar } from './views/Calendar.tsx';
@@ -53,6 +54,8 @@ export function App() {
     addEventListener('hashchange', onHash);
     return () => removeEventListener('hashchange', onHash);
   }, []);
+
+  useAgentSync(data);
 
   const ready = data !== null;
   useEffect(() => {

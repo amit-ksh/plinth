@@ -1,25 +1,36 @@
-// Read-only MCP server over a directory store. stdout belongs to the protocol, so nothing logs there.
-import { existsSync } from 'node:fs';
+// Read-only MCP server over a directory store or an audit file. stdout belongs to the protocol, so nothing logs there.
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { describeChange, formatMoney, UNKNOWN_TEXT } from '../../packages/core/src/format.ts';
 import { openNative } from '../../packages/core/src/native.ts';
+import * as Q from '../../packages/core/src/queries.ts';
+import { loadStore } from '../../packages/core/src/store.ts';
 import { PRODUCT_NAME } from '../../packages/core/src/product.ts';
 import type { Discount, VariantAudit } from '../../packages/core/src/types.ts';
 import { InputError } from '../../packages/core/src/validate.ts';
-import { Workspace, type Persistence } from '../../packages/core/src/workspace.ts';
+import { readBackup, Workspace, type Persistence } from '../../packages/core/src/workspace.ts';
 
 const path = resolve(process.argv[2] ?? resolve(import.meta.dirname, '../../demo/store'));
 if (!existsSync(path)) {
-  console.error(`No store at ${path}. Create one with: npm run store:import -- <backup.json> <directory>`);
+  console.error(`No store at ${path}. Pass the desktop app's plinth-audit.json, or create a store with: npm run store:import -- <backup.json> <directory>`);
   process.exit(1);
 }
 
+// A .json path is an audit file, such as the one the desktop app keeps in its agent folder.
+const fromFile = path.toLowerCase().endsWith('.json');
+
 /** A fresh read-only open on every call, because a long-lived reader keeps seeing old data. */
 function open(): Workspace {
-  const db = openNative(path, { readOnly: true });
+  let db;
+  if (fromFile) {
+    const { store, app } = readBackup(readFileSync(path, 'utf8'));
+    db = openNative(':memory:');
+    loadStore(db, store);
+    db.query(Q.WRITE_APP, { json: JSON.stringify(app) });
+  } else db = openNative(path, { readOnly: true });
   const persistence: Persistence = {
     saved: 'read-only',
     active: () => db,

@@ -5,6 +5,7 @@ import type { ShopifyLink } from '../../../../packages/core/src/app-state.ts';
 import type { Currency } from '../../../../packages/core/src/format.ts';
 import type { StoreInput } from '../../../../packages/core/src/types.ts';
 import { useApp } from '../context.ts';
+import { IS_DESKTOP } from '../desktop.ts';
 import { connectShopify, SHOPIFY_CONNECT } from '../shopify.ts';
 import { call, explainError } from '../engine.ts';
 import { Disclosure, download, Icon, Issues, Page, plural } from '../ui.tsx';
@@ -183,6 +184,11 @@ export function Import() {
     <Page title="Import your store" lead={SHOPIFY_CONNECT ? 'Connect Shopify, or use two spreadsheet files.' : 'Two spreadsheet files. Nothing is uploaded.'}>
       <Issues issues={issues} />
       {SHOPIFY_CONNECT && <ConnectShopify />}
+      {IS_DESKTOP && (
+        <p className="caption muted">
+          To connect a Shopify store, use Plinth on the web, then download a backup and restore it here.
+        </p>
+      )}
       <form className="card form" onSubmit={review} noValidate>
         {SHOPIFY_CONNECT && <h2>Use spreadsheets</h2>}
         <div className="field">

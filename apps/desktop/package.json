@@ -1,0 +1,14 @@
+{
+  "name": "@app/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plinth for Windows, macOS and Linux: the same app in a native window, with an agent folder for local AI tools.",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon icon.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}

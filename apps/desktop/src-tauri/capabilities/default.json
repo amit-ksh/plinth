@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The main window: Plinth's own commands only. No file system or shell access from the web view.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

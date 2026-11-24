@@ -84,3 +84,24 @@ test('a browser backup becomes a store the server can read', async () => {
     rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 });
+
+test('the desktop agent file is read directly, and each call sees the latest save', async () => {
+  const temp = mkdtempSync(join(tmpdir(), 'plinth-mcp-'));
+  try {
+    const file = join(temp, 'plinth-audit.json');
+    const app = defaultState(false);
+    app.settings.storeName = 'Desktop shop';
+    const write = (store: typeof SAMPLE_STORE) => writeFileSync(file, JSON.stringify({ format: 'discount-audit', version: 1, store, app }));
+    write(SAMPLE_STORE);
+    await connected(file, async (client) => {
+      const first = (await call(client, 'audit_store')).value;
+      assert.equal(first.store, 'Desktop shop');
+      assert.equal(first.counts.leak, 2);
+      // The desktop app saves again: BUNDLE20 removed, so the jacket's stack is gone.
+      write({ ...SAMPLE_STORE, discounts: SAMPLE_STORE.discounts.filter((d) => d.id !== 'BUNDLE20') });
+      assert.equal((await call(client, 'audit_store')).value.counts.leak, 1);
+    });
+  } finally {
+    rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  }
+});

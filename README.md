@@ -41,6 +41,22 @@ Plinth is where discounts are planned, created and changed, with a leak check in
 
 When the audit is linked to a Shopify store, saves, ends, deletes and rollbacks are written to Shopify first, and only recorded locally if Shopify accepts them. Otherwise they change this audit only.
 
+## Desktop app
+
+[`apps/desktop`](apps/desktop) wraps the same app in a native window with [Tauri](https://tauri.app), so it looks and works exactly like the web version. The Windows installer is a few megabytes plus the 7 MB graph engine, instead of a bundled browser.
+
+It adds one thing a browser can't: an **agent folder**. Under **Connect an AI agent**, choose a folder, and Plinth writes `plinth-audit.json` there after every change. Point the MCP server at that file and your agent always reads the latest audit:
+
+```bash
+claude mcp add plinth -- node --experimental-strip-types apps/mcp/server.ts "C:/Users/you/Documents/plinth-audit.json"
+```
+
+The web view can write only that one file, in the folder chosen in a native dialog; it has no other file system access. Shopify sign-in stays on the web app; bring a store to the desktop with **Back up** and **Restore**.
+
+```bash
+npm run build -w @app/desktop      # needs Rust; writes the installer to apps/desktop/src-tauri/target/release/bundle/
+```
+
 ## Connect a Shopify store
 
 On the live app, open **Import**, enter the store address and select **Connect Shopify**. Shopify asks for access to read products and inventory costs and to manage discounts. The Worker in [`apps/web/worker`](apps/web/worker) checks Shopify's signature and a one-time state cookie, trades the code for a short-lived online token, reads the store and hands the mapped data to the browser. The token is kept only in an encrypted, HttpOnly cookie that expires with it; the Worker stores nothing. Discount writes go through a fixed set of mutations in [`packages/core/src/shopify-write.ts`](packages/core/src/shopify-write.ts), checked against a real store with `npm run shopify:check-writes`.
