@@ -43,6 +43,8 @@ When the audit is linked to a Shopify store, saves, ends, deletes and rollbacks 
 
 ## Desktop app
 
+**Download:** [Windows, macOS and Linux installers](https://github.com/amit-ksh/plinth/releases/tag/desktop-v0.1.0) (preview builds, not yet code-signed).
+
 [`apps/desktop`](apps/desktop) wraps the same app in a native window with [Tauri](https://tauri.app), so it looks and works exactly like the web version. The Windows installer is a few megabytes plus the 7 MB graph engine, instead of a bundled browser.
 
 It adds one thing a browser can't: an **agent folder**. Under **Connect an AI agent**, choose a folder, and Plinth writes `plinth-audit.json` there after every change. Point the MCP server at that file and your agent always reads the latest audit:
